@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import {
   createPostAction,
   type CreatePostState,
-} from "@/app/create/actions";
+} from "@/app/(main)/create/actions";
 
 type Props = {
   communities: { _id: string; name: string }[];

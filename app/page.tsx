@@ -1,143 +1,383 @@
 import Link from "next/link";
-import { getCommunities } from "@/lib/queries/communities";
-import { getLatestPosts } from "@/lib/queries/post";
+import {
+  ArrowRight,
+  Bookmark,
+  Calendar,
+  Flame,
+  MapPin,
+  PenSquare,
+  Users,
+} from "lucide-react";
+import JoinButton from "@/components/JoinButton";
+import { getCurrentUserId } from "@/lib/queries/auth";
+import {
+  getFeaturedCommunities,
+  getLatestBlogs,
+  getMyCommunities,
+  getProfile,
+  getTrendingTopics,
+} from "@/app/(main)/home/page";
+
+export const dynamic = "force-dynamic"; // membership + trending change often
+
+/* ---------- helpers ---------- */
+
+function formatCount(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".0", "")}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(".0", "")}K`;
+  return String(n);
+}
+
+function Initial({ name, className = "" }: { name: string; className?: string }) {
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-xl bg-blue-500/15 font-bold text-blue-300 ${className}`}
+    >
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+function Logo({
+  name,
+  src,
+  className,
+}: {
+  name: string;
+  src?: string;
+  className: string;
+}) {
+  if (!src) return <Initial name={name} className={className} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" className={`${className} rounded-xl object-contain`} />;
+}
+
+function Avatar({ src, className }: { src?: string; className: string }) {
+  if (!src)
+    return (
+      <span
+        className={`${className} shrink-0 rounded-full bg-gradient-to-br from-slate-600 to-slate-800`}
+      />
+    );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" className={`${className} shrink-0 rounded-full object-cover`} />;
+}
+
+function SectionHeader({ title, href }: { title: string; href: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <h2 className="text-lg font-bold text-white">{title}</h2>
+      <Link
+        href={href}
+        className="flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300"
+      >
+        View all <ArrowRight className="h-3 w-3" />
+      </Link>
+    </div>
+  );
+}
+
+const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
+const chip = "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300";
+
+/* ---------- page ---------- */
 
 export default async function Home() {
-  const communities = await getCommunities();
-  const posts = await getLatestPosts();
+  const userId = await getCurrentUserId();
+  const signedIn = !!userId;
+
+  const [featured, myCommunities, blogs, profile, trending] = await Promise.all([
+    getFeaturedCommunities(userId),
+    getMyCommunities(userId),
+    getLatestBlogs(),
+    getProfile(userId),
+    getTrendingTopics(),
+  ]);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      {/* Hero */}
-      <section className="border-b border-gray-800">
-        <div className="mx-auto max-w-7xl px-6 py-20 text-center">
-          <h1 className="mb-6 text-5xl font-bold">
-            Welcome to DevCommunity
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      {/* ================= CENTER ================= */}
+      <div className="min-w-0 space-y-6">
+        {/* Hero */}
+        <section
+          className={`${card} relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-8 py-8`}
+        >
+          <p className="mb-2 text-[11px] font-semibold tracking-[0.2em] text-blue-400">
+            BUILD • SHARE • LEARN
+          </p>
+          <h1 className="text-4xl font-bold tracking-tight text-white">
+            Explore developer communities
           </h1>
-
-          <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-400">
-            Discover developer communities, share knowledge, and connect with
-            developers from around the world.
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
+            Join communities, read insightful blogs, share your knowledge and
+            grow with developers around the world.
           </p>
 
-          <div className="flex justify-center gap-4">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/communities"
-              className="rounded-lg bg-white px-6 py-3 font-semibold text-gray-900 hover:bg-gray-200"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500"
             >
-              Explore Communities
+              Browse Communities <ArrowRight className="h-4 w-4" />
             </Link>
-
             <Link
-              href="/blogs"
-              className="rounded-lg border border-gray-700 px-6 py-3 font-semibold text-white hover:bg-gray-900"
+              href="/create"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/60 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
             >
-              Read Blogs
+              <PenSquare className="h-4 w-4" /> Create a Post
             </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Communities */}
-      <section className="mx-auto max-w-7xl px-6 py-14">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold">Popular Communities</h2>
-            <p className="mt-2 text-gray-400">
-              Find communities that match your interests.
+        {/* Featured Communities */}
+        <section>
+          <SectionHeader title="Featured Communities" href="/communities" />
+          {featured.length === 0 ? (
+            <p className={`${card} p-6 text-sm text-slate-400`}>
+              No communities yet. Be the first to{" "}
+              <Link href="/communities/create" className="text-blue-400 hover:text-blue-300">
+                create one
+              </Link>
+              .
             </p>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
+              {featured.map((c) => (
+                <div key={c.id} className={`${card} flex flex-col p-4`}>
+                  <Link href={`/communities/${c.slug}`} className="block">
+                    <Logo name={c.name} src={c.logo} className="h-11 w-11 text-lg" />
+                    <h3 className="mt-3 text-sm font-semibold text-white">{c.name}</h3>
+                    <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs text-slate-400">
+                      {c.description}
+                    </p>
+                  </Link>
 
-          <Link
-            href="/communities"
-            className="text-gray-300 hover:text-white"
-          >
-            View all →
-          </Link>
-        </div>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {c.topics.slice(0, 2).map((t) => (
+                      <span key={t} className={chip}>
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {communities.slice(0, 3).map((community) => (
-            <Link
-              key={community._id.toString()}
-              href={`/communities/${community.slug}`}
-              className="rounded-xl border border-gray-800 bg-gray-900 p-6 transition hover:border-gray-600"
-            >
-              <h3 className="mb-2 text-xl font-semibold">
-                {community.name}
-              </h3>
+                  <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+                    <Users className="h-3.5 w-3.5" />
+                    {formatCount(c.memberCount)} members
+                  </p>
 
-              <p className="mb-4 text-gray-400">
-                {community.description}
-              </p>
+                  <JoinButton communityId={c.id} joined={c.joined} signedIn={signedIn} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-              <div className="flex flex-wrap gap-2">
-                {community.topics.map((topic) => (
-                  <span
-                    key={topic}
-                    className="rounded-full bg-gray-800 px-3 py-1 text-sm text-gray-300"
+        {/* Latest Blogs */}
+        <section>
+          <SectionHeader title="Latest Blogs" href="/blogs" />
+          {blogs.length === 0 ? (
+            <p className={`${card} p-6 text-sm text-slate-400`}>No posts yet.</p>
+          ) : (
+            <div className={`${card} divide-y divide-slate-800`}>
+              {blogs.map((b) => (
+                <article key={b.id} className="flex items-center gap-4 p-3">
+                  <Link href={`/blogs/${b.slug}`} className="shrink-0">
+                    {b.cover ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={b.cover}
+                        alt=""
+                        className="h-[62px] w-[132px] rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="h-[62px] w-[132px] rounded-md bg-gradient-to-br from-slate-800 to-slate-900" />
+                    )}
+                  </Link>
+
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/blogs/${b.slug}`}>
+                      <h3 className="truncate text-sm font-semibold text-white hover:text-blue-300">
+                        {b.title}
+                      </h3>
+                    </Link>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{b.excerpt}</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                      <Avatar src={b.authorImage} className="h-4 w-4" />
+                      <span>{b.authorName}</span>
+                      <span>·</span>
+                      <span>{b.date}</span>
+                      <span>·</span>
+                      <span>{b.readMinutes} min read</span>
+                      {b.topic && (
+                        <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-blue-300">
+                          {b.topic}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="Bookmark"
+                    className="hidden p-2 text-slate-400 hover:text-white sm:block"
                   >
-                    #{topic}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+                    <Bookmark className="h-4 w-4" />
+                  </button>
+                  <Link
+                    href={`/blogs/${b.slug}`}
+                    className="hidden rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 sm:block"
+                  >
+                    Read Blog
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
-      {/* Blogs */}
-      <section className="border-t border-gray-800">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold">Latest Blogs</h2>
-              <p className="mt-2 text-gray-400">
-                Read the latest posts from the community.
-              </p>
+      {/* ================= RIGHT ================= */}
+      <aside className="space-y-4">
+        {/* Profile (or sign-in prompt) */}
+        {profile ? (
+          <section className={`${card} p-5`}>
+            <div className="flex items-center gap-3">
+              <Avatar src={profile.image} className="h-14 w-14" />
+              <div>
+                <h2 className="font-semibold text-white">{profile.name}</h2>
+                <p className="text-xs text-slate-400">{profile.headline}</p>
+              </div>
             </div>
 
-            <Link
-              href="/blogs"
-              className="text-gray-300 hover:text-white"
-            >
-              View all →
-            </Link>
-          </div>
+            {profile.bio && (
+              <p className="mt-4 text-xs leading-relaxed text-slate-300">{profile.bio}</p>
+            )}
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {posts.slice(0, 3).map((post) => (
-              <article
-                key={post._id.toString()}
-                className="rounded-xl border border-gray-800 bg-gray-900 p-6"
-              >
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {post.topics.map((topic) => (
+            <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400">
+              {profile.location && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" /> {profile.location}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" /> Joined {profile.joined}
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
+              {profile.stats.map((s) => (
+                <div key={s.label}>
+                  <p className="text-lg font-bold text-white">{s.value}</p>
+                  <p className="text-[11px] text-slate-400">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {profile.skills.length > 0 && (
+              <div className="mt-4 border-t border-slate-800 pt-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white">Skills</h3>
+                  <Link href="/settings" className="text-xs text-blue-400 hover:text-blue-300">
+                    Edit
+                  </Link>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((s) => (
                     <span
-                      key={topic}
-                      className="rounded-full bg-gray-800 px-3 py-1 text-sm text-gray-300"
+                      key={s}
+                      className="rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300"
                     >
-                      #{topic}
+                      {s}
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className={`${card} p-5`}>
+            <h2 className="font-semibold text-white">Join DevCommunity</h2>
+            <p className="mt-1 text-xs text-slate-400">
+              Sign in to join communities, bookmark blogs and publish your own posts.
+            </p>
+            <Link
+              href="/login"
+              className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+            >
+              Sign in
+            </Link>
+          </section>
+        )}
 
-                <h3 className="mb-3 text-xl font-semibold">
-                  {post.title}
-                </h3>
+        {/* My Communities */}
+        {signedIn && (
+          <section className={`${card} p-4`}>
+            <SectionHeader title="My Communities" href="/communities" />
+            {myCommunities.length === 0 ? (
+              <p className="text-xs text-slate-400">
+                You haven&apos;t joined any communities yet.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {myCommunities.map((c) => (
+                  <li key={c.id} className="flex items-center gap-3">
+                    <Logo name={c.name} src={c.logo} className="h-9 w-9 text-sm" />
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/communities/${c.slug}`}
+                        className="block truncate text-sm font-medium text-white hover:text-blue-300"
+                      >
+                        {c.name}
+                      </Link>
+                      <p className="text-[11px] text-slate-400">
+                        {formatCount(c.memberCount)} members
+                      </p>
+                    </div>
+                    <JoinButton communityId={c.id} joined signedIn compact />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
-                <p className="mb-4 text-gray-400">
-                  {post.content}
-                </p>
-
-                <p className="text-sm text-gray-500">
-                  By {post.author?.toString() ?? "Unknown author"}
-                </p>
-              </article>
-            ))}
+        {/* Trending Topics */}
+        <section className={`${card} p-4`}>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+              <Flame className="h-4 w-4 text-orange-400" /> Trending Topics
+            </h2>
+            <Link
+              href="/blogs"
+              className="flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300"
+            >
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
-        </div>
-      </section>
-    </main>
+          {trending.length === 0 ? (
+            <p className="text-xs text-slate-400">Topics will appear as people post.</p>
+          ) : (
+            <ol className="space-y-1">
+              {trending.map((t, i) => (
+                <li key={t.topic}>
+                  <Link
+                    href={`/blogs?topic=${encodeURIComponent(t.topic)}`}
+                    className="flex items-center gap-3 rounded-md px-1 py-2 text-sm hover:bg-slate-800/50"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-800 text-[11px] text-slate-300">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 text-slate-200">{t.topic}</span>
+                    <span className="text-xs text-slate-400">
+                      {formatCount(t.posts)} posts
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </aside>
+    </div>
   );
 }
