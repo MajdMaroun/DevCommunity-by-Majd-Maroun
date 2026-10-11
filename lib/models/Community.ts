@@ -4,7 +4,9 @@ export interface ICommunity extends Document {
   name: string;
   slug: string;
   description: string;
+  logo?: string;
   topics: string[];
+  members: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
 }
 
@@ -29,8 +31,19 @@ const CommunitySchema = new Schema<ICommunity>(
       required: true,
     },
 
+    logo: {
+      type: String,
+    },
+
     topics: {
       type: [String],
+      default: [],
+      index: true,
+    },
+
+    // Users who joined. toggleMembership adds/removes ids here.
+    members: {
+      type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       default: [],
       index: true,
     },

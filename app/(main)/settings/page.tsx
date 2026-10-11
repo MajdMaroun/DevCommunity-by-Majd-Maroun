@@ -1,20 +1,27 @@
+// app/(main)/settings/page.tsx
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/queries/users";
+import { connectToDatabase } from "@/lib/mongodb";
+import User from "@/lib/models/User";
 import SettingsForm from "@/components/SettingsForm";
 
 export default async function SettingsPage() {
-  const user = await getCurrentUser();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
+  await connectToDatabase();
+  const user = await User.findById(session.user.id).lean();
   if (!user) redirect("/login");
 
-  return (
-    <div className="mx-auto max-w-xl px-6 py-10 text-white">
-      <h1 className="text-2xl font-bold">Settings</h1>
-      <p className="mt-1 mb-8 text-sm text-gray-400">
-        Update your public profile information.
-      </p>
+  const settings = JSON.parse(JSON.stringify(user.settings ?? {}));
 
-      <SettingsForm user={user} />
-    </div>
+  return (
+    <SettingsForm
+      user={{
+        name: user.name,
+        username: user.username,
+        settings,
+      }}
+    />
   );
 }

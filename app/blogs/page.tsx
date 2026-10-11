@@ -11,7 +11,7 @@ export default async function BlogsPage() {
 
       <p className="mb-8 text-gray-400">
         Discover the latest posts from the DevCommunity.
-      </p>
+      </p> 
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (

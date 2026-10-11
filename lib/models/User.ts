@@ -9,6 +9,15 @@ export interface IUser extends Document {
   bio: string;
   followers: number;
   following: number;
+  settings: {
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    weeklyDigest: boolean;
+    privateAccount: boolean;
+    showActivityStatus: boolean;
+    theme: "system" | "dark" | "light";
+    language: "en" | "ar" | "fr" | "es";
+  };
 }
 
 const UserSchema = new Schema<IUser>(
@@ -27,6 +36,15 @@ const UserSchema = new Schema<IUser>(
     bio: { type: String, default: "" },
     followers: { type: Number, default: 0 },
     following: { type: Number, default: 0 },
+    settings: {
+  emailNotifications: { type: Boolean, default: true },
+  pushNotifications: { type: Boolean, default: false },
+  weeklyDigest: { type: Boolean, default: true },
+  privateAccount: { type: Boolean, default: false },
+  showActivityStatus: { type: Boolean, default: true },
+  theme: { type: String, enum: ["system", "dark", "light"], default: "system" },
+  language: { type: String, enum: ["en", "ar", "fr", "es"], default: "en" },
+},
   },
   { timestamps: true }
 );

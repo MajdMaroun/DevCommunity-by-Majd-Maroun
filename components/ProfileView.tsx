@@ -1,6 +1,16 @@
 import Link from "next/link";
 import FollowButton from "./FollowButton";
 
+export type ProfilePost = {
+  _id: string;
+  title: string;
+  slug: string;
+  topics?: string[];
+  published?: boolean;
+  createdAt?: string;
+  community?: { name: string; slug: string };
+};
+
 type ProfileUser = {
   username?: string;
   name: string;
@@ -9,17 +19,20 @@ type ProfileUser = {
   bio?: string;
   followers?: number;
   following?: number;
-  posts?: { _id: string; title: string; slug: string }[];
+  posts?: ProfilePost[];
 };
 
 export default function ProfileView({
   user,
+  posts: postsProp,
   isOwnProfile = false,
 }: {
   user: ProfileUser;
+  posts?: ProfilePost[];
   isOwnProfile?: boolean;
 }) {
-  const posts = user.posts ?? [];
+  // Prefer the posts prop; fall back to user.posts so other pages still work
+  const posts = postsProp ?? user.posts ?? [];
 
   const initials = (user.name || "?")
     .split(" ")
@@ -36,18 +49,20 @@ export default function ProfileView({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-{user.image ? (
-  <img
-    src={user.image}
-    alt={user.name}
-    referrerPolicy="no-referrer"
-    className="h-20 w-20 rounded-full object-cover"
-  />
-) : (
-  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold">
-    {initials}
-  </div>
-)}          <div>
+          {user.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.image}
+              alt={user.name}
+              referrerPolicy="no-referrer"
+              className="h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold">
+              {initials}
+            </div>
+          )}
+          <div>
             <h1 className="text-2xl font-bold">{user.name}</h1>
             {handle && <p className="text-sm text-gray-400">@{handle}</p>}
           </div>
@@ -94,7 +109,24 @@ export default function ProfileView({
             key={post._id}
             className="rounded-lg border border-gray-800 bg-gray-900 p-4"
           >
-            <h3 className="font-medium">{post.title}</h3>
+            <Link
+              href={`/blogs/${post.slug}`}
+              className="font-medium hover:text-blue-300"
+            >
+              {post.title}
+            </Link>
+
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+              {post.createdAt && (
+                <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              )}
+              {post.community && <span>· {post.community.name}</span>}
+              {post.published === false && (
+                <span className="rounded bg-yellow-500/15 px-2 py-0.5 text-yellow-300">
+                  Draft
+                </span>
+              )}
+            </div>
           </article>
         ))}
       </div>

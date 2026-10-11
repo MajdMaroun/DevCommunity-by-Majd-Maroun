@@ -1,42 +1,57 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser, updateUser } from "@/lib/queries/users";
+import { z } from "zod";
+import { auth } from "@/auth";                 // your next-auth v5 config file
+import { connectToDatabase } from "@/lib/mongodb";     // your existing connection helper
+import User from "@/lib/models/User";              // your User model
 
 export type SettingsState = { error?: string; success?: boolean } | null;
+
+const schema = z.object({
+  emailNotifications: z.boolean(),
+  pushNotifications: z.boolean(),
+  weeklyDigest: z.boolean(),
+  privateAccount: z.boolean(),
+  showActivityStatus: z.boolean(),
+  theme: z.enum(["system", "dark", "light"]),
+  language: z.enum(["en", "ar", "fr", "es"]),
+});
 
 export async function saveSettings(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) return { error: "You must be logged in." };
+  const session = await auth();
+  if (!session?.user?.id) return { error: "You must be signed in." };
 
-  const name = String(formData.get("name") ?? "").trim();
-  const username = String(formData.get("username") ?? "").trim().toLowerCase();
-  const bio = String(formData.get("bio") ?? "").trim();
+  const parsed = schema.safeParse({
+    emailNotifications: formData.get("emailNotifications") === "on",
+    pushNotifications: formData.get("pushNotifications") === "on",
+    weeklyDigest: formData.get("weeklyDigest") === "on",
+    privateAccount: formData.get("privateAccount") === "on",
+    showActivityStatus: formData.get("showActivityStatus") === "on",
+    theme: formData.get("theme"),
+    language: formData.get("language"),
+  });
 
-  if (!name) return { error: "Name is required." };
-  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-    return {
-      error: "Username must be 3-20 characters: letters, numbers, underscores.",
-    };
-  }
-  if (bio.length > 160) return { error: "Bio must be 160 characters or less." };
+  if (!parsed.success) return { error: "Invalid settings." };
 
   try {
-    const result = await updateUser(String(currentUser._id), {
-      name,
-      username,
-      bio,
+    await connectToDatabase();
+    await User.findByIdAndUpdate(session.user.id, {
+      $set: { settings: parsed.data },
     });
-    if (result?.error) return { error: result.error };
   } catch {
-    return { error: "Could not save your settings. Please try again." };
+    return { error: "Could not save settings. Try again." };
   }
 
-  revalidatePath("/profile");
-  revalidatePath("/settings");
-  revalidatePath("/", "layout"); // refreshes server-rendered shell data
+  const jar = await cookies();
+  const opts = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
+  jar.set("theme", parsed.data.theme, opts);
+  jar.set("lang", parsed.data.language, opts);
+
+  revalidatePath("/", "layout");
   return { success: true };
 }

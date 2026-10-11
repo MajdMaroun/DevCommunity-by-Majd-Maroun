@@ -24,6 +24,30 @@ export async function getLatestPosts() {
   return posts;
 }
 
+export async function getPostsByAuthor(userId: string, includeDrafts = false) {
+  await connectToDatabase();
+
+  const posts = await Post.find({
+    author: userId, // Mongoose casts the string to an ObjectId
+    ...(includeDrafts ? {} : { published: true }),
+  })
+    .populate({ path: "community", model: Community, select: "name slug" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // plain JSON so it can be passed to client components
+  return JSON.parse(JSON.stringify(posts)) as {
+    _id: string;
+    title: string;
+    slug: string;
+    content: string;
+    topics: string[];
+    published: boolean;
+    createdAt: string;
+    community?: { name: string; slug: string };
+  }[];
+}
+
 export async function getCommunityOptions() {
   await connectToDatabase();
 

@@ -1,45 +1,56 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "next-auth/react"; // swap for your auth hook
 
-export type BookmarkedPost = {
-  id: string;
-  title: string;
-  href: string;
+export type BookmarkedPost = { id: string; title: string; href: string };
+
+const SYNC_EVENT = "bookmarks:changed";
+const keyFor = (userId: string) => `bookmarks:${userId}`;
+
+const read = (userId: string): BookmarkedPost[] => {
+  try {
+    return JSON.parse(localStorage.getItem(keyFor(userId)) ?? "[]");
+  } catch {
+    return [];
+  }
 };
 
-const KEY = "bookmarks";
-const listeners = new Set<() => void>();
+export const useBookmarks = () => {
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? null;
+  const [bookmarks, setBookmarks] = useState<BookmarkedPost[]>([]);
 
-const getSnapshot = () => localStorage.getItem(KEY) ?? "[]";
-const getServerSnapshot = () => "[]";
+  // Reload on user change, and whenever another component instance
+  // (e.g. a BookmarkButton) changes the list
+  useEffect(() => {
+    const load = () => setBookmarks(userId ? read(userId) : []);
+    load();
+    window.addEventListener(SYNC_EVENT, load);
+    window.addEventListener("storage", load); // other tabs
+    return () => {
+      window.removeEventListener(SYNC_EVENT, load);
+      window.removeEventListener("storage", load);
+    };
+  }, [userId]);
 
-const subscribe = (cb: () => void) => {
-  listeners.add(cb);
-  window.addEventListener("storage", cb); // sync across tabs
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", cb);
-  };
-};
+  const isBookmarked = useCallback(
+    (id: string) => bookmarks.some((b) => b.id === id),
+    [bookmarks]
+  );
 
-const write = (list: BookmarkedPost[]) => {
-  localStorage.setItem(KEY, JSON.stringify(list));
-  listeners.forEach((l) => l());
-};
-
-export function useBookmarks() {
-  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const bookmarks = useMemo(() => JSON.parse(raw) as BookmarkedPost[], [raw]);
-
-  const isBookmarked = (id: string) => bookmarks.some((b) => b.id === id);
-
-  const toggle = (post: BookmarkedPost) =>
-    write(
-      isBookmarked(post.id)
-        ? bookmarks.filter((b) => b.id !== post.id)
-        : [...bookmarks, post]
-    );
+  const toggle = useCallback(
+    (post: BookmarkedPost) => {
+      if (!userId) return;
+      const current = read(userId);
+      const next = current.some((b) => b.id === post.id)
+        ? current.filter((b) => b.id !== post.id)
+        : [...current, post];
+      localStorage.setItem(keyFor(userId), JSON.stringify(next));
+      window.dispatchEvent(new Event(SYNC_EVENT));
+    },
+    [userId]
+  );
 
   return { bookmarks, isBookmarked, toggle };
-}
+};

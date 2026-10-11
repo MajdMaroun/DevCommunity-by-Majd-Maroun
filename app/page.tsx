@@ -195,12 +195,14 @@ export default async function Home() {
                     ))}
                   </div>
 
-                  <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
-                    <Users className="h-3.5 w-3.5" />
-                    {formatCount(c.memberCount)} members
-                  </p>
-
-                  <JoinButton communityId={c.id} joined={c.joined} signedIn={signedIn} />
+                  {/* footer: always pinned to the bottom of the card */}
+                  <div className="mt-auto pt-3">
+                    <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
+                      <Users className="h-3.5 w-3.5" />
+                      {formatCount(c.memberCount)} members
+                    </p>
+                    <JoinButton communityId={c.id} joined={c.joined} signedIn={signedIn} />
+                  </div>
                 </div>
               ))}
             </div>

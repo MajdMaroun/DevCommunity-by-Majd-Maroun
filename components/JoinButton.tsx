@@ -25,14 +25,20 @@ export default function JoinButton({
       return;
     }
     startTransition(async () => {
-      setOptimisticJoined(!optimisticJoined);
-      await toggleMembership(communityId);
-    });
+  setOptimisticJoined(!optimisticJoined);
+  const res = await toggleMembership(communityId);
+  if (!res.ok) {
+    console.error("toggleMembership failed:", res.error);
+    alert(`Could not update membership: ${res.error}`); // temporary, remove once it works
+  }
+  router.refresh();
+});
   }
 
+  // No top margin here: the card footer wrapper handles spacing
   const base = compact
     ? "rounded-md px-3 py-1 text-[11px]"
-    : "mt-3 w-full rounded-lg py-1.5 text-xs";
+    : "w-full rounded-lg py-1.5 text-xs";
 
   return (
     <button
@@ -45,7 +51,13 @@ export default function JoinButton({
           : "border-slate-700 text-slate-200 hover:bg-slate-800"
       }`}
     >
-      {optimisticJoined ? "Joined" : "Join Community"}
+      {optimisticJoined
+        ? compact
+          ? "Leave"
+          : "Leave Community"
+        : compact
+          ? "Join"
+          : "Join Community"}
     </button>
   );
 }
