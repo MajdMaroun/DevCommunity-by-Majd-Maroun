@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/lib/models/User";
+import { loginSchema } from "@/lib/loginSchema";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -10,9 +11,11 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    if (!email || !password) {
+    const { success, error } = loginSchema.safeParse({ email, password });
+
+    if (!success) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: error.issues[0].message },
         { status: 400 }
       );
     }

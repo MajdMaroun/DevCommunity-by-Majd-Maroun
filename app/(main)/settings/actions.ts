@@ -13,7 +13,7 @@ export async function saveSettings(
   if (!currentUser) return { error: "You must be logged in." };
 
   const name = String(formData.get("name") ?? "").trim();
-  const username = String(formData.get("username") ?? "").trim();
+  const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const bio = String(formData.get("bio") ?? "").trim();
 
   if (!name) return { error: "Name is required." };
@@ -24,9 +24,19 @@ export async function saveSettings(
   }
   if (bio.length > 160) return { error: "Bio must be 160 characters or less." };
 
-  const result = await updateUser(currentUser._id, { name, username, bio });
-  if (result.error) return { error: result.error };
+  try {
+    const result = await updateUser(String(currentUser._id), {
+      name,
+      username,
+      bio,
+    });
+    if (result?.error) return { error: result.error };
+  } catch {
+    return { error: "Could not save your settings. Please try again." };
+  }
 
   revalidatePath("/profile");
+  revalidatePath("/settings");
+  revalidatePath("/", "layout"); // refreshes server-rendered shell data
   return { success: true };
 }

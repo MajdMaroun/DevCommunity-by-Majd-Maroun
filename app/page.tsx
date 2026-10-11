@@ -1,7 +1,7 @@
 import Link from "next/link";
+import BookmarkButton from "@/components/BookmarkButton";
 import {
   ArrowRight,
-  Bookmark,
   Calendar,
   Flame,
   MapPin,
@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import JoinButton from "@/components/JoinButton";
-import { getCurrentUserId } from "@/lib/queries/auth";
+import { auth } from "@/auth";
 import {
   getFeaturedCommunities,
   getLatestBlogs,
@@ -22,12 +22,14 @@ export const dynamic = "force-dynamic"; // membership + trending change often
 
 /* ---------- helpers ---------- */
 
+// 1500 -> "1.5K", 2000000 -> "2M"
 function formatCount(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".0", "")}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(".0", "")}K`;
   return String(n);
 }
 
+// Letter tile shown when a community has no logo
 function Initial({ name, className = "" }: { name: string; className?: string }) {
   return (
     <div
@@ -48,19 +50,34 @@ function Logo({
   className: string;
 }) {
   if (!src) return <Initial name={name} className={className} />;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" className={`${className} rounded-xl object-contain`} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
+      className={`${className} rounded-xl object-contain`}
+    />
+  );
 }
 
-function Avatar({ src, className }: { src?: string; className: string }) {
+// User avatar, with a gradient placeholder when there is no photo
+function Avatar({ src, className }: { src?: string | null; className: string }) {
   if (!src)
     return (
       <span
         className={`${className} shrink-0 rounded-full bg-gradient-to-br from-slate-600 to-slate-800`}
       />
     );
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" className={`${className} shrink-0 rounded-full object-cover`} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
+      className={`${className} shrink-0 rounded-full object-cover`}
+    />
+  );
 }
 
 function SectionHeader({ title, href }: { title: string; href: string }) {
@@ -83,16 +100,34 @@ const chip = "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300"
 /* ---------- page ---------- */
 
 export default async function Home() {
-  const userId = await getCurrentUserId();
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
   const signedIn = !!userId;
 
-  const [featured, myCommunities, blogs, profile, trending] = await Promise.all([
+  const [featured, myCommunities, blogs, dbProfile, trending] = await Promise.all([
     getFeaturedCommunities(userId),
     getMyCommunities(userId),
     getLatestBlogs(),
     getProfile(userId),
     getTrendingTopics(),
   ]);
+
+  // Use the database profile when it exists. Otherwise (e.g. a brand-new
+  // Google/GitHub user) fall back to the Auth.js session so the card still shows.
+  const profile = dbProfile
+    ? { ...dbProfile, image: dbProfile.image ?? session?.user?.image ?? undefined }
+    : session?.user
+      ? {
+          name: session.user.name ?? session.user.email ?? "User",
+          image: session.user.image ?? undefined,
+          headline: session.user.email ?? "",
+          bio: "",
+          location: "",
+          joined: "",
+          stats: [] as { label: string; value: string | number }[],
+          skills: [] as string[],
+        }
+      : null;
 
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -200,6 +235,7 @@ export default async function Home() {
                         {b.title}
                       </h3>
                     </Link>
+
                     <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{b.excerpt}</p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                       <Avatar src={b.authorImage} className="h-4 w-4" />
@@ -216,13 +252,9 @@ export default async function Home() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    aria-label="Bookmark"
-                    className="hidden p-2 text-slate-400 hover:text-white sm:block"
-                  >
-                    <Bookmark className="h-4 w-4" />
-                  </button>
+                  <BookmarkButton
+                    post={{ id: b.id, title: b.title, href: `/blogs/${b.slug}` }}
+                  />
                   <Link
                     href={`/blogs/${b.slug}`}
                     className="hidden rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 sm:block"
@@ -243,9 +275,11 @@ export default async function Home() {
           <section className={`${card} p-5`}>
             <div className="flex items-center gap-3">
               <Avatar src={profile.image} className="h-14 w-14" />
-              <div>
-                <h2 className="font-semibold text-white">{profile.name}</h2>
-                <p className="text-xs text-slate-400">{profile.headline}</p>
+              <div className="min-w-0">
+                <h2 className="truncate font-semibold text-white">{profile.name}</h2>
+                {profile.headline && (
+                  <p className="truncate text-xs text-slate-400">{profile.headline}</p>
+                )}
               </div>
             </div>
 
@@ -253,25 +287,31 @@ export default async function Home() {
               <p className="mt-4 text-xs leading-relaxed text-slate-300">{profile.bio}</p>
             )}
 
-            <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400">
-              {profile.location && (
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" /> {profile.location}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" /> Joined {profile.joined}
-              </span>
-            </div>
+            {(profile.location || profile.joined) && (
+              <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400">
+                {profile.location && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" /> {profile.location}
+                  </span>
+                )}
+                {profile.joined && (
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" /> Joined {profile.joined}
+                  </span>
+                )}
+              </div>
+            )}
 
-            <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
-              {profile.stats.map((s) => (
-                <div key={s.label}>
-                  <p className="text-lg font-bold text-white">{s.value}</p>
-                  <p className="text-[11px] text-slate-400">{s.label}</p>
-                </div>
-              ))}
-            </div>
+            {profile.stats.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
+                {profile.stats.map((s) => (
+                  <div key={s.label}>
+                    <p className="text-lg font-bold text-white">{s.value}</p>
+                    <p className="text-[11px] text-slate-400">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {profile.skills.length > 0 && (
               <div className="mt-4 border-t border-slate-800 pt-4">
@@ -293,6 +333,13 @@ export default async function Home() {
                 </div>
               </div>
             )}
+
+            <Link
+              href="/profile"
+              className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 hover:bg-slate-800"
+            >
+              View profile
+            </Link>
           </section>
         ) : (
           <section className={`${card} p-5`}>

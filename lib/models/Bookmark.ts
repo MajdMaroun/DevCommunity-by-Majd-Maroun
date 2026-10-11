@@ -1,33 +1,45 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+"use client";
 
-export interface IBookmark extends Document {
-  user: mongoose.Types.ObjectId;
-  post: mongoose.Types.ObjectId;
+import { useMemo, useSyncExternalStore } from "react";
+
+export type BookmarkedPost = {
+  id: string;
+  title: string;
+  href: string;
+};
+
+const KEY = "bookmarks";
+const listeners = new Set<() => void>();
+
+const getSnapshot = () => localStorage.getItem(KEY) ?? "[]";
+const getServerSnapshot = () => "[]";
+
+const subscribe = (cb: () => void) => {
+  listeners.add(cb);
+  window.addEventListener("storage", cb); // sync across tabs
+  return () => {
+    listeners.delete(cb);
+    window.removeEventListener("storage", cb);
+  };
+};
+
+const write = (list: BookmarkedPost[]) => {
+  localStorage.setItem(KEY, JSON.stringify(list));
+  listeners.forEach((l) => l());
+};
+
+export function useBookmarks() {
+  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const bookmarks = useMemo(() => JSON.parse(raw) as BookmarkedPost[], [raw]);
+
+  const isBookmarked = (id: string) => bookmarks.some((b) => b.id === id);
+
+  const toggle = (post: BookmarkedPost) =>
+    write(
+      isBookmarked(post.id)
+        ? bookmarks.filter((b) => b.id !== post.id)
+        : [...bookmarks, post]
+    );
+
+  return { bookmarks, isBookmarked, toggle };
 }
-
-const BookmarkSchema = new Schema<IBookmark>(
-  {
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    post: {
-      type: Schema.Types.ObjectId,
-      ref: "Post",
-      required: true,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-BookmarkSchema.index({ user: 1, post: 1 }, { unique: true });
-
-const Bookmark: Model<IBookmark> =
-  mongoose.models.Bookmark ||
-  mongoose.model<IBookmark>("Bookmark", BookmarkSchema);
-
-export default Bookmark;

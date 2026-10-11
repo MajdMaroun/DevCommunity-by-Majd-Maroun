@@ -1,16 +1,17 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
-
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI!;
+
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongoose: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } | undefined;
+}
+
+const cached = global._mongoose ?? (global._mongoose = { conn: null, promise: null });
 
 export async function connectToDatabase() {
-  if (!MONGODB_URI) {
-    throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
-  }
-  await mongoose.connect(MONGODB_URI, {
-   // here you can add any additional options for the connection if needed
-   // like useNewUrlParser, useUnifiedTopology, etc. but they are not necessary in Mongoose 6 and above
-    });
+  if (cached.conn) return cached.conn;
+  cached.promise ??= mongoose.connect(uri, { bufferCommands: false });
+  cached.conn = await cached.promise;
+  return cached.conn;
 }

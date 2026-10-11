@@ -2,12 +2,14 @@ import Link from "next/link";
 import FollowButton from "./FollowButton";
 
 type ProfileUser = {
-  username: string;
+  username?: string;
   name: string;
+  email?: string;
+  image?: string | null;
   bio?: string;
   followers?: number;
   following?: number;
-  posts: { _id: string; title: string; slug: string }[];
+  posts?: { _id: string; title: string; slug: string }[];
 };
 
 export default function ProfileView({
@@ -17,23 +19,37 @@ export default function ProfileView({
   user: ProfileUser;
   isOwnProfile?: boolean;
 }) {
-  const initials = user.name
+  const posts = user.posts ?? [];
+
+  const initials = (user.name || "?")
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
+    .slice(0, 2)
     .toUpperCase();
+
+  const handle = user.username ?? user.email?.split("@")[0];
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10 text-white">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold">
-            {initials}
-          </div>
-          <div>
+{user.image ? (
+  <img
+    src={user.image}
+    alt={user.name}
+    referrerPolicy="no-referrer"
+    className="h-20 w-20 rounded-full object-cover"
+  />
+) : (
+  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold">
+    {initials}
+  </div>
+)}          <div>
             <h1 className="text-2xl font-bold">{user.name}</h1>
-            <p className="text-sm text-gray-400">@{user.username}</p>
+            {handle && <p className="text-sm text-gray-400">@{handle}</p>}
           </div>
         </div>
 
@@ -62,18 +78,18 @@ export default function ProfileView({
           <span className="text-gray-400">following</span>
         </span>
         <span>
-          <strong className="text-white">{user.posts.length}</strong>{" "}
+          <strong className="text-white">{posts.length}</strong>{" "}
           <span className="text-gray-400">posts</span>
         </span>
       </div>
 
       {/* Posts */}
-      <h2 className="mt-10 mb-4 text-lg font-semibold">Posts</h2>
+      <h2 className="mb-4 mt-10 text-lg font-semibold">Posts</h2>
       <div className="space-y-3">
-        {user.posts.length === 0 && (
+        {posts.length === 0 && (
           <p className="text-sm text-gray-500">No posts yet.</p>
         )}
-        {user.posts.map((post) => (
+        {posts.map((post) => (
           <article
             key={post._id}
             className="rounded-lg border border-gray-800 bg-gray-900 p-4"

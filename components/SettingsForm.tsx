@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveSettings, type SettingsState } from "@/app/settings/actions";
+import { saveSettings, type SettingsState } from "@/app/(main)/settings/actions";
 
 type Props = {
   user: { name: string; username: string; bio?: string };

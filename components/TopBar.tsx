@@ -3,11 +3,17 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, Bell, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut, signIn } from "next-auth/react";
+import Avatar from "@/components/Avatar"
 
 export default function Topbar() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
   const [notifOpen, setNotifOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const notifRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -25,6 +31,17 @@ export default function Topbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Debounced search (avoids a request on every keystroke)
+  useEffect(() => {
+    if (!search.trim()) return;
+    const timeout = setTimeout(async () => {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(search)}`);
+      const data = await res.json();
+      console.log(data);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
   const handleNotificationsClick = () => {
     setNotifOpen((prev) => !prev);
     setMenuOpen(false);
@@ -35,36 +52,17 @@ export default function Topbar() {
     setNotifOpen(false);
   };
 
-  const [search, setSearch] = useState("");
-
-const handleSearch = async (value: string) => {
-  setSearch(value);
-
-  if (!value.trim()) return;
-
-  const response = await fetch(
-    `/api/search?q=${encodeURIComponent(value)}`
-  );
-
-  const data = await response.json();
-
-  console.log(data);
-};
-
-const [user, setUser] = useState({
-  name: "Majd Maroun",
-});
-
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-800 bg-gray-950/80 px-6 py-3 backdrop-blur">
       {/* Search */}
       <div className="flex w-full max-w-md items-center gap-2 rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-gray-400">
         <Search size={16} />
-        <input type="text"
-               value={search}
-               onChange={(e) => handleSearch(e.target.value)}
-               placeholder="Search communities, blogs, people..."
-               className="w-full bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none"
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search communities, blogs, people..."
+          className="w-full bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none"
         />
       </div>
 
@@ -95,59 +93,75 @@ const [user, setUser] = useState({
         </div>
 
         {/* Profile */}
-        <div className="relative" ref={menuRef}>
+        {status === "loading" ? (
+          // Skeleton while the session loads
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 animate-pulse rounded-full bg-gray-800" />
+            <div className="h-4 w-20 animate-pulse rounded bg-gray-800" />
+          </div>
+        ) : !user ? (
           <button
-            onClick={handleProfileClick}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            className="flex items-center gap-2 text-sm text-white"
+            onClick={() => signIn()}
+            className="rounded-lg bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-400"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-xs font-semibold">
-  {user.name
-    .split(" ")
-    .map((name) => name[0])
-    .join("")
-    .slice(0, 2)}
-</div>
-
-{user.name}
-            <ChevronDown
-              size={16}
-              className={`text-gray-400 transition-transform ${
-                menuOpen ? "rotate-180" : ""
-              }`}
-            />
+            Sign in
           </button>
-
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 mt-3 w-48 rounded-lg border border-gray-800 bg-gray-900 py-1 text-sm shadow-xl"
+        ) : (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={handleProfileClick}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              className="flex items-center gap-2 text-sm text-white"
             >
-              <button
-                role="menuitem"
-                onClick={() => router.push("/profile")}
-                className="block w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-800 hover:text-white"
+             <Avatar name={user.name} image={user.image} size={32} />
+
+              <span className="hidden sm:inline">{user.name ?? user.email}</span>
+
+              <ChevronDown
+                size={16}
+                className={`text-gray-400 transition-transform ${
+                  menuOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {menuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-3 w-48 rounded-lg border border-gray-800 bg-gray-900 py-1 text-sm shadow-xl"
               >
-                Profile
-              </button>
-              <button
-                role="menuitem"
-                onClick={() => router.push("/settings")}
-                className="block w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-800 hover:text-white"
-              >
-                Settings
-              </button>
-              <button
-                role="menuitem"
-                onClick={() => console.log("Log out")}
-                className="block w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800"
-              >
-                Log out
-              </button>
-            </div>
-          )}
-        </div>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/profile");
+                  }}
+                  className="block w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  Profile
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="block w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  Settings
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="block w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800"
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
