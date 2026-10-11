@@ -33,7 +33,7 @@ export type BlogCardData = {
 export type ProfileData = {
   name: string;
   image?: string;
-  headline: string;
+  title: string;
   bio: string;
   location: string;
   joined: string;
@@ -154,7 +154,7 @@ export async function getProfile(userId: string | null): Promise<ProfileData | n
   return {
     name: user.name,
     image: user.image,
-    headline: user.headline ?? "Developer",
+    title: user.title ?? "Developer",
     bio: user.bio ?? "",
     location: user.location ?? "",
     joined: fmtDate(user.createdAt, { month: "short", year: "numeric" }),

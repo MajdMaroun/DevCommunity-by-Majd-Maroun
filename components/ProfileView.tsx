@@ -8,12 +8,16 @@ export type ProfilePost = {
   topics?: string[];
   published?: boolean;
   createdAt?: string;
-  community?: { name: string; slug: string };
+  community?: {
+    name: string;
+    slug: string;
+  };
 };
 
 type ProfileUser = {
   username?: string;
   name: string;
+  title?: string;
   email?: string;
   image?: string | null;
   bio?: string;
@@ -31,7 +35,7 @@ export default function ProfileView({
   posts?: ProfilePost[];
   isOwnProfile?: boolean;
 }) {
-  // Prefer the posts prop; fall back to user.posts so other pages still work
+  // Prefer the posts prop; fall back to user.posts
   const posts = postsProp ?? user.posts ?? [];
 
   const initials = (user.name || "?")
@@ -49,6 +53,7 @@ export default function ProfileView({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
+          {/* Profile image */}
           {user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -62,12 +67,26 @@ export default function ProfileView({
               {initials}
             </div>
           )}
+
+          {/* Name + title + username */}
           <div>
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-            {handle && <p className="text-sm text-gray-400">@{handle}</p>}
+            <h1 className="text-2xl font-bold">
+              {user.name}
+            </h1>
+
+            <p className="text-sm text-gray-400">
+              {user.title || "Developer"}
+            </p>
+
+            {handle && (
+              <p className="text-sm text-gray-500">
+                @{handle}
+              </p>
+            )}
           </div>
         </div>
 
+        {/* Profile action */}
         {isOwnProfile ? (
           <Link
             href="/settings"
@@ -80,30 +99,55 @@ export default function ProfileView({
         )}
       </div>
 
-      {user.bio && <p className="mt-6 text-gray-300">{user.bio}</p>}
+      {/* Bio */}
+      {user.bio && (
+        <p className="mt-6 text-gray-300">
+          {user.bio}
+        </p>
+      )}
 
       {/* Stats */}
       <div className="mt-6 flex gap-6 text-sm">
         <span>
-          <strong className="text-white">{user.followers ?? 0}</strong>{" "}
-          <span className="text-gray-400">followers</span>
+          <strong className="text-white">
+            {user.followers ?? 0}
+          </strong>{" "}
+          <span className="text-gray-400">
+            followers
+          </span>
         </span>
+
         <span>
-          <strong className="text-white">{user.following ?? 0}</strong>{" "}
-          <span className="text-gray-400">following</span>
+          <strong className="text-white">
+            {user.following ?? 0}
+          </strong>{" "}
+          <span className="text-gray-400">
+            following
+          </span>
         </span>
+
         <span>
-          <strong className="text-white">{posts.length}</strong>{" "}
-          <span className="text-gray-400">posts</span>
+          <strong className="text-white">
+            {posts.length}
+          </strong>{" "}
+          <span className="text-gray-400">
+            posts
+          </span>
         </span>
       </div>
 
       {/* Posts */}
-      <h2 className="mb-4 mt-10 text-lg font-semibold">Posts</h2>
+      <h2 className="mb-4 mt-10 text-lg font-semibold">
+        Posts
+      </h2>
+
       <div className="space-y-3">
         {posts.length === 0 && (
-          <p className="text-sm text-gray-500">No posts yet.</p>
+          <p className="text-sm text-gray-500">
+            No posts yet.
+          </p>
         )}
+
         {posts.map((post) => (
           <article
             key={post._id}
@@ -118,9 +162,19 @@ export default function ProfileView({
 
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
               {post.createdAt && (
-                <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                <span>
+                  {new Date(
+                    post.createdAt
+                  ).toLocaleDateString()}
+                </span>
               )}
-              {post.community && <span>· {post.community.name}</span>}
+
+              {post.community && (
+                <span>
+                  · {post.community.name}
+                </span>
+              )}
+
               {post.published === false && (
                 <span className="rounded bg-yellow-500/15 px-2 py-0.5 text-yellow-300">
                   Draft

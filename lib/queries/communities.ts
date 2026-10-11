@@ -28,3 +28,24 @@ export async function getAllCommunities(userId: string | null) {
     joined: r.joined,
   }));
 }
+
+export async function getCommunityBySlug(slug: string, userId: string | null) {
+  await connectToDatabase();
+ 
+  const c = await Community.findOne({ slug }).lean();
+  if (!c) return null;
+ 
+  const members = (c.members ?? []).map((m: unknown) => String(m));
+ 
+  return {
+    id: String(c._id),
+    slug: c.slug,
+    name: c.name,
+    description: c.description,
+    logo: c.logo as string | undefined,
+    topics: (c.topics ?? []) as string[],
+    createdAt: new Date(c.createdAt as Date).toISOString(),
+    memberCount: members.length,
+    joined: userId ? members.includes(userId) : false,
+  };
+}

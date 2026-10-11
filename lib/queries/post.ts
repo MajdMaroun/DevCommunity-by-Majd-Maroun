@@ -24,6 +24,31 @@ export async function getLatestPosts() {
   return posts;
 }
 
+
+export async function getPostBySlug(slug: string) {
+  await connectToDatabase();
+
+  const post = await Post.findOne({ slug })
+    .populate({ path: "author", model: User, select: "name username image" })
+    .populate({ path: "community", model: Community, select: "name slug" })
+    .lean();
+
+  if (!post) return null;
+
+  return JSON.parse(JSON.stringify(post)) as {
+    _id: string;
+    title: string;
+    slug: string;
+    content: string;
+    cover?: string;
+    topics: string[];
+    published: boolean;
+    createdAt: string;
+    author: { _id: string; name: string; username?: string; image?: string | null };
+    community?: { name: string; slug: string };
+  };
+}
+
 export async function getPostsByAuthor(userId: string, includeDrafts = false) {
   await connectToDatabase();
 
@@ -41,10 +66,31 @@ export async function getPostsByAuthor(userId: string, includeDrafts = false) {
     title: string;
     slug: string;
     content: string;
+    cover?: string;
     topics: string[];
     published: boolean;
     createdAt: string;
     community?: { name: string; slug: string };
+  }[];
+}
+
+export async function getPostsByCommunity(communityId: string) {
+  await connectToDatabase();
+
+  const posts = await Post.find({ community: communityId, published: true })
+    .populate({ path: "author", model: User, select: "name username image" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return JSON.parse(JSON.stringify(posts)) as {
+    _id: string;
+    title: string;
+    slug: string;
+    content: string;
+    cover?: string;
+    topics: string[];
+    createdAt: string;
+    author?: { name: string; username?: string; image?: string | null };
   }[];
 }
 
@@ -70,6 +116,7 @@ function slugify(text: string) {
 export async function createPost(data: {
   title: string;
   content: string;
+  cover?: string;
   community: string;
   author: string;
   topics: string[];

@@ -8,6 +8,9 @@ export interface ICommunity extends Document {
   topics: string[];
   members: mongoose.Types.ObjectId[];
   createdBy: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+  cover?: string;
 }
 
 const CommunitySchema = new Schema<ICommunity>(
@@ -53,6 +56,8 @@ const CommunitySchema = new Schema<ICommunity>(
       ref: "User",
       required: true,
     },
+    
+    cover: { type: String },
   },
   {
     timestamps: true,

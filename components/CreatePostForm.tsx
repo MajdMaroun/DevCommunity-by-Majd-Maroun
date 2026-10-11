@@ -7,10 +7,13 @@ import {
 } from "@/app/(main)/create/actions";
 
 type Props = {
-  communities: { _id: string; name: string }[];
+  // slug is optional so existing callers keep working
+  communities: { _id: string; name: string; slug?: string }[];
+  // slug from /create?community=react, used to preselect the dropdown
+  defaultCommunity?: string;
 };
 
-export default function CreatePostForm({ communities }: Props) {
+export default function CreatePostForm({ communities, defaultCommunity }: Props) {
   const [state, formAction, pending] = useActionState<CreatePostState, FormData>(
     createPostAction,
     null
@@ -18,6 +21,10 @@ export default function CreatePostForm({ communities }: Props) {
 
   const inputClass =
     "w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none";
+
+  // Preselect the community the user came from; otherwise force a choice
+  const preselected =
+    communities.find((c) => c.slug === defaultCommunity)?._id ?? "";
 
   return (
     <form action={formAction} className="space-y-5">
@@ -36,6 +43,19 @@ export default function CreatePostForm({ communities }: Props) {
       </div>
 
       <div>
+        <label htmlFor="cover" className="mb-1.5 block text-sm text-gray-300">
+          Cover image <span className="text-gray-500">(optional)</span>
+        </label>
+        <input
+          id="cover"
+          name="cover"
+          type="url"
+          placeholder="https://..."
+          className={inputClass}
+        />
+      </div>
+
+      <div>
         <label htmlFor="community" className="mb-1.5 block text-sm text-gray-300">
           Community
         </label>
@@ -43,7 +63,7 @@ export default function CreatePostForm({ communities }: Props) {
           id="community"
           name="community"
           required
-          defaultValue=""
+          defaultValue={preselected}
           className={inputClass}
         >
           <option value="" disabled>
@@ -55,6 +75,9 @@ export default function CreatePostForm({ communities }: Props) {
             </option>
           ))}
         </select>
+        <p className="mt-1 text-[11px] text-gray-500">
+          Your post will appear only in this community.
+        </p>
       </div>
 
       <div>

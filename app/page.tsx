@@ -61,14 +61,35 @@ function Logo({
   );
 }
 
-// User avatar, with a gradient placeholder when there is no photo
-function Avatar({ src, className }: { src?: string | null; className: string }) {
-  if (!src)
+// User avatar: photo if there is one, otherwise the user's initials (e.g. "MM")
+function Avatar({
+  src,
+  name = "",
+  className,
+  textClass = "text-xs",
+}: {
+  src?: string | null;
+  name?: string;
+  className: string;
+  textClass?: string;
+}) {
+  if (!src) {
+    const initials = name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
     return (
       <span
-        className={`${className} shrink-0 rounded-full bg-gradient-to-br from-slate-600 to-slate-800`}
-      />
+        className={`${className} ${textClass} flex shrink-0 items-center justify-center rounded-full bg-indigo-500 font-semibold text-white`}
+      >
+        {initials}
+      </span>
     );
+  }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -112,14 +133,15 @@ export default async function Home() {
     getTrendingTopics(),
   ]);
 
-  // Use the database profile when it exists. Otherwise (e.g. a brand-new
-  // Google/GitHub user) fall back to the Auth.js session so the card still shows.
+  // Trust the database profile when it exists, so a removed photo stays removed.
+  // Only brand-new users with no DB profile fall back to the Auth.js session.
   const profile = dbProfile
-    ? { ...dbProfile, image: dbProfile.image ?? session?.user?.image ?? undefined }
+    ? { ...dbProfile, image: dbProfile.image || undefined }
     : session?.user
       ? {
           name: session.user.name ?? session.user.email ?? "User",
           image: session.user.image ?? undefined,
+          title: "Developer",
           headline: session.user.email ?? "",
           bio: "",
           location: "",
@@ -240,7 +262,12 @@ export default async function Home() {
 
                     <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{b.excerpt}</p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                      <Avatar src={b.authorImage} className="h-4 w-4" />
+                      <Avatar
+                        src={b.authorImage}
+                        name={b.authorName}
+                        className="h-5 w-5"
+                        textClass="text-[8px]"
+                      />
                       <span>{b.authorName}</span>
                       <span>·</span>
                       <span>{b.date}</span>
@@ -276,12 +303,15 @@ export default async function Home() {
         {profile ? (
           <section className={`${card} p-5`}>
             <div className="flex items-center gap-3">
-              <Avatar src={profile.image} className="h-14 w-14" />
+              <Avatar
+                src={profile.image}
+                name={profile.name}
+                className="h-14 w-14"
+                textClass="text-xl"
+              />
               <div className="min-w-0">
                 <h2 className="truncate font-semibold text-white">{profile.name}</h2>
-                {profile.headline && (
-                  <p className="truncate text-xs text-slate-400">{profile.headline}</p>
-                )}
+                <p className="truncate text-xs text-slate-400">{profile.title || "Developer"}</p>
               </div>
             </div>
 

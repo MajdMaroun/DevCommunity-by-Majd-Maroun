@@ -1,179 +1,288 @@
 "use client";
 
-import { useActionState } from "react";
-import { saveSettings, type SettingsState } from "@/app/(main)/settings/actions";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { updateProfile, type ProfileFormState } from "@/app/actions/profile";
 
 type Props = {
   user: {
     name: string;
-    username: string;
+    username?: string;
     bio?: string;
-    settings?: {
-      emailNotifications?: boolean;
-      pushNotifications?: boolean;
-      weeklyDigest?: boolean;
-      privateAccount?: boolean;
-      showActivityStatus?: boolean;
-      theme?: "system" | "dark" | "light";
-      language?: string;
-    };
+    title?: string;
+    image?: string | null;
+    email?: string;
   };
 };
 
-const inputClass =
-  "w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none";
+const initial: ProfileFormState = { ok: false, message: "" };
 
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4 border-t border-gray-800 pt-6 first:border-t-0 first:pt-0">
-      <div>
-        <h2 className="text-base font-semibold text-white">{title}</h2>
-        {description && (
-          <p className="mt-0.5 text-sm text-gray-500">{description}</p>
-        )}
-      </div>
-      {children}
-    </section>
-  );
-}
+const input =
+  "w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none";
 
-function Toggle({
-  name,
-  label,
-  description,
-  defaultChecked,
-}: {
-  name: string;
-  label: string;
-  description?: string;
-  defaultChecked?: boolean;
-}) {
-  return (
-    <label className="flex cursor-pointer items-start justify-between gap-4">
-      <span>
-        <span className="block text-sm text-gray-200">{label}</span>
-        {description && (
-          <span className="block text-xs text-gray-500">{description}</span>
-        )}
-      </span>
-      <span className="relative mt-0.5 inline-flex shrink-0">
-        <input
-          type="checkbox"
-          name={name}
-          defaultChecked={defaultChecked}
-          className="peer sr-only"
-        />
-        <span className="h-6 w-11 rounded-full bg-gray-700 transition peer-checked:bg-indigo-500 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-400" />
-        <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition peer-checked:translate-x-5" />
-      </span>
-    </label>
+const label = "mb-1 block text-xs font-medium text-slate-300";
+
+const MAX_FILE_MB = 5;
+const SIZE = 256;
+
+// Center-crop to a square, shrink to 256px, return a small JPEG data URL
+async function fileToAvatar(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const side = Math.min(bmp.width, bmp.height);
+  const sx = (bmp.width - side) / 2;
+  const sy = (bmp.height - side) / 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("Canvas not supported");
+  }
+
+  ctx.drawImage(
+    bmp,
+    sx,
+    sy,
+    side,
+    side,
+    0,
+    0,
+    SIZE,
+    SIZE
   );
+
+  return canvas.toDataURL("image/jpeg", 0.85);
 }
 
 export default function SettingsForm({ user }: Props) {
-  const [state, formAction, pending] = useActionState<SettingsState, FormData>(
-    saveSettings,
-    null
+  const router = useRouter();
+
+  const [state, formAction, pending] = useActionState(
+    updateProfile,
+    initial
   );
-  const s = user.settings ?? {};
+
+  const [image, setImage] = useState(user.image ?? "");
+  const [imgError, setImgError] = useState("");
+
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Refresh server data after a successful save
+  useEffect(() => {
+    if (state.ok) {
+      window.dispatchEvent(new Event("profile:updated"));
+      router.refresh();
+    }
+  }, [state, router]);
+
+  const initials = (user.name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setImgError("");
+
+    if (!file.type.startsWith("image/")) {
+      setImgError("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setImgError(`Image must be under ${MAX_FILE_MB} MB.`);
+      return;
+    }
+
+    try {
+      setImage(await fileToAvatar(file));
+    } catch {
+      setImgError("Could not read that image. Try another one.");
+    }
+  }
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className="space-y-5">
+      {/* Avatar upload */}
+      <div>
+        <span className={label}>Profile photo</span>
 
-      {/* Notifications */}
-      <Section title="Notifications" description="Choose what you hear about.">
-        <Toggle
-          name="emailNotifications"
-          label="Email notifications"
-          description="Replies, mentions, and account activity."
-          defaultChecked={s.emailNotifications ?? true}
-        />
-        <Toggle
-          name="pushNotifications"
-          label="Push notifications"
-          description="Get alerts on your devices."
-          defaultChecked={s.pushNotifications ?? false}
-        />
-        <Toggle
-          name="weeklyDigest"
-          label="Weekly digest"
-          description="A summary of what you missed."
-          defaultChecked={s.weeklyDigest ?? true}
-        />
-      </Section>
+        <div className="flex items-center gap-4">
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={image}
+              alt=""
+              referrerPolicy="no-referrer"
+              className="h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold text-white">
+              {initials}
+            </div>
+          )}
 
-      {/* Privacy */}
-      <Section title="Privacy" description="Control who can see what.">
-        <Toggle
-          name="privateAccount"
-          label="Private account"
-          description="Only approved followers can see your posts."
-          defaultChecked={s.privateAccount ?? false}
-        />
-        <Toggle
-          name="showActivityStatus"
-          label="Show activity status"
-          description="Let others see when you're online."
-          defaultChecked={s.showActivityStatus ?? true}
-        />
-      </Section>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+            >
+              Upload photo
+            </button>
 
-      {/* Preferences */}
-      <Section title="Preferences">
-        <div>
-          <label htmlFor="theme" className="mb-1.5 block text-sm text-gray-300">
-            Theme
-          </label>
-          <select
-            id="theme"
-            name="theme"
-            defaultValue={s.theme ?? "system"}
-            className={inputClass}
-          >
-            <option value="system">System</option>
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
+            {image && (
+              <button
+                type="button"
+                onClick={() => setImage("")}
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-red-300"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={onPickFile}
+            className="hidden"
+          />
         </div>
 
-        <div>
-          <label htmlFor="language" className="mb-1.5 block text-sm text-gray-300">
-            Language
-          </label>
-          <select
-            id="language"
-            name="language"
-            defaultValue={s.language ?? "en"}
-            className={inputClass}
-          >
-            <option value="en">English</option>
-            <option value="ar">العربية</option>
-            <option value="fr">Français</option>
-            <option value="es">Español</option>
-          </select>
-        </div>
-      </Section>
+        {imgError && (
+          <p className="mt-2 text-xs text-red-400">
+            {imgError}
+          </p>
+        )}
 
-      {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
-      {state?.success && (
-        <p className="text-sm text-green-400">Settings saved.</p>
+        <input type="hidden" name="image" value={image} />
+      </div>
+
+      {/* Name */}
+      <div>
+        <label htmlFor="name" className={label}>
+          Name
+        </label>
+
+        <input
+          id="name"
+          name="name"
+          defaultValue={user.name}
+          required
+          maxLength={50}
+          className={input}
+        />
+      </div>
+
+      {/* Professional Title */}
+      <div>
+        <label htmlFor="title" className={label}>
+          Professional Title
+        </label>
+
+        <input
+          id="title"
+          name="title"
+          defaultValue={user.title ?? "Developer"}
+          required
+          maxLength={50}
+          placeholder="e.g. Full Stack Developer"
+          className={input}
+        />
+
+        <p className="mt-1 text-[11px] text-slate-500">
+          This appears below your name on your profile.
+        </p>
+      </div>
+
+      {/* Username */}
+      <div>
+        <label htmlFor="username" className={label}>
+          Username
+        </label>
+
+        <div className="flex items-center rounded-lg border border-slate-700 bg-slate-900/60 focus-within:border-blue-500">
+          <span className="pl-3 text-sm text-slate-500">@</span>
+
+          <input
+            id="username"
+            name="username"
+            defaultValue={user.username ?? ""}
+            required
+            maxLength={20}
+            className="w-full bg-transparent px-2 py-2 text-sm text-white focus:outline-none"
+          />
+        </div>
+
+        <p className="mt-1 text-[11px] text-slate-500">
+          3 to 20 characters: letters, numbers and underscores. Your public
+          profile lives at /profile/username.
+        </p>
+      </div>
+
+      {/* Bio */}
+      <div>
+        <label htmlFor="bio" className={label}>
+          Bio
+        </label>
+
+        <textarea
+          id="bio"
+          name="bio"
+          defaultValue={user.bio ?? ""}
+          rows={3}
+          maxLength={160}
+          placeholder="Tell people a little about yourself"
+          className={input}
+        />
+      </div>
+
+      {/* Email */}
+      {user.email && (
+        <div>
+          <label className={label}>Email</label>
+
+          <input
+            value={user.email}
+            disabled
+            readOnly
+            className={`${input} cursor-not-allowed opacity-60`}
+          />
+        </div>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg bg-indigo-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-indigo-600 disabled:opacity-50"
-      >
-        {pending ? "Saving..." : "Save changes"}
-      </button>
+      {/* Save */}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+        >
+          {pending ? "Saving..." : "Save changes"}
+        </button>
+
+        {state.message && (
+          <p
+            className={`text-sm ${
+              state.ok ? "text-green-400" : "text-red-400"
+            }`}
+            role="status"
+          >
+            {state.message}
+          </p>
+        )}
+      </div>
     </form>
   );
 }

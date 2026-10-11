@@ -1,23 +1,26 @@
 import { notFound, redirect } from "next/navigation";
-import { getUser, getCurrentUser } from "@/lib/queries/users";
 import ProfileView from "@/components/ProfileView";
+import { getCurrentUser, getUserByUsername } from "@/lib/queries/users";
+import { getPostsByAuthor } from "@/lib/queries/post";
 
-export default async function UserProfilePage({
+export const dynamic = "force-dynamic";
+
+export default async function PublicProfilePage({
   params,
 }: {
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
 
-  const [user, currentUser] = await Promise.all([
-    getUser(username),
-    getCurrentUser(),
-  ]);
-
+  const user = await getUserByUsername(username);
   if (!user) notFound();
 
-  // Visiting your own username URL goes to /profile
-  if (currentUser?.username === user.username) redirect("/profile");
+  // Visiting your own public URL sends you to your own profile page
+  const me = await getCurrentUser();
+  if (me && me._id === user._id) redirect("/profile");
 
-  return <ProfileView user={user} />;
+  // Published posts only; other people's drafts stay private
+  const posts = await getPostsByAuthor(user._id, false);
+
+  return <ProfileView user={user} posts={posts} />;
 }

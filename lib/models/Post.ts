@@ -4,6 +4,7 @@ export interface IPost extends Document {
   title: string;
   slug: string;
   content: string;
+  cover?: string;
   author: mongoose.Types.ObjectId;
   community: mongoose.Types.ObjectId;
   topics: string[];
