@@ -18,6 +18,7 @@ import {
 } from "@/app/(main)/home/page";
 
 import { getTrendingTopics } from "@/lib/queries/post";
+import { getFollowerCount } from "@/lib/queries/follow";
 
 export const dynamic = "force-dynamic"; // trending change often
 
@@ -126,18 +127,30 @@ export default async function Home() {
   const userId = session?.user?.id ?? null;
   const signedIn = !!userId;
 
-  const [featured, myCommunities, blogs, dbProfile, trending] = await Promise.all([
-    getFeaturedCommunities(userId),
-    getMyCommunities(userId),
-    getLatestBlogs(),
-    getProfile(userId),
-    getTrendingTopics(),
-  ]);
+  const [featured, myCommunities, blogs, dbProfile, trending, followerCount] =
+    await Promise.all([
+      getFeaturedCommunities(userId),
+      getMyCommunities(userId),
+      getLatestBlogs(),
+      getProfile(userId),
+      getTrendingTopics(),
+      getFollowerCount(userId), // real count from the Follow records
+    ]);
+
+  // Replace the Followers stat with the live count, whatever getProfile returned
+  const withLiveFollowers = (stats: { label: string; value: string | number }[]) =>
+    stats.map((s) =>
+      s.label.toLowerCase() === "followers" ? { ...s, value: followerCount } : s
+    );
 
   // Trust the database profile when it exists, so a removed photo stays removed.
   // Only brand-new users with no DB profile fall back to the Auth.js session.
   const profile = dbProfile
-    ? { ...dbProfile, image: dbProfile.image || undefined }
+    ? {
+        ...dbProfile,
+        image: dbProfile.image || undefined,
+        stats: withLiveFollowers(dbProfile.stats),
+      }
     : session?.user
       ? {
           name: session.user.name ?? session.user.email ?? "User",
@@ -222,7 +235,7 @@ export default async function Home() {
                   <div className="mt-auto pt-3">
                     <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
                       <Users className="h-3.5 w-3.5" />
-                      {formatCount(c.memberCount)} members
+                      {formatCount(c.memberCount)} {c.memberCount === 1 ? "member" : "members"}
                     </p>
                     <JoinButton communityId={c.id} joined={c.joined} signedIn={signedIn} />
                   </div>
@@ -410,7 +423,8 @@ export default async function Home() {
                         {c.name}
                       </Link>
                       <p className="text-[11px] text-slate-400">
-                        {formatCount(c.memberCount)} members
+                        {formatCount(c.memberCount)}{" "}
+                        {c.memberCount === 1 ? "member" : "members"}
                       </p>
                     </div>
                     <JoinButton communityId={c.id} joined signedIn compact />
@@ -449,7 +463,7 @@ export default async function Home() {
                     </span>
                     <span className="flex-1 text-slate-200">{t.topic}</span>
                     <span className="text-xs text-slate-400">
-                      {formatCount(t.posts)} posts
+                      {formatCount(t.posts)} {t.posts === 1 ? "post" : "posts"}
                     </span>
                   </Link>
                 </li>

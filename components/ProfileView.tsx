@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FollowButton from "./FollowButton";
+import PostActions from "./PostActions";
 
 export type ProfilePost = {
   _id: string;
@@ -155,12 +156,21 @@ export default function ProfileView({
 
               {post.community && <span>· {post.community.name}</span>}
 
-              {post.published === false && (
+              {!isOwnProfile && post.published === false && (
                 <span className="rounded bg-yellow-500/15 px-2 py-0.5 text-yellow-300">
                   Draft
                 </span>
               )}
             </div>
+
+            {/* Edit / Publish / Delete, only on your own profile */}
+            {isOwnProfile && (
+              <PostActions
+                postId={post._id}
+                slug={post.slug}
+                published={post.published !== false}
+              />
+            )}
           </article>
         ))}
       </div>

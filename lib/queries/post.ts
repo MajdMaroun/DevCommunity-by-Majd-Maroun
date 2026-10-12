@@ -44,6 +44,25 @@ export async function getPublishedPosts(topic?: string) {
   return JSON.parse(JSON.stringify(posts));
 }
 
+export async function getPostForEdit(slug: string, userId: string) {
+  await connectToDatabase();
+
+  // author filter: only the author can load a post for editing
+  const post = await Post.findOne({ slug, author: userId }).lean();
+  if (!post) return null;
+
+  return {
+    _id: String(post._id),
+    slug: post.slug as string,
+    title: post.title as string,
+    content: post.content as string,
+    cover: (post.cover as string | undefined) ?? "",
+    topics: ((post.topics ?? []) as string[]),
+    community: String(post.community),
+    published: !!post.published,
+  };
+}
+
 export async function getTrendingTopics(limit = 5) {
   await connectToDatabase();
 

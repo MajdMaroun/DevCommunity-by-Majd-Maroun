@@ -54,3 +54,10 @@ export async function getRelationships(
 
   return map;
 }
+
+// Real follower count, counted from the Follow records (cannot drift like a stored counter)
+export async function getFollowerCount(userId: string | null) {
+  if (!userId) return 0;
+  await connectToDatabase();
+  return Follow.countDocuments({ following: userId });
+}

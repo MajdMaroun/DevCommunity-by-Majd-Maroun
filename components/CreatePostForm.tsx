@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import CoverUpload from "@/components/CoverUpload";
 import {
   createPostAction,
   type CreatePostState,
@@ -42,18 +43,8 @@ export default function CreatePostForm({ communities, defaultCommunity }: Props)
         />
       </div>
 
-      <div>
-        <label htmlFor="cover" className="mb-1.5 block text-sm text-gray-300">
-          Cover image <span className="text-gray-500">(optional)</span>
-        </label>
-        <input
-          id="cover"
-          name="cover"
-          type="url"
-          placeholder="https://..."
-          className={inputClass}
-        />
-      </div>
+      {/* Upload from device, or paste a URL. Submits as the "cover" field. */}
+      <CoverUpload />
 
       <div>
         <label htmlFor="community" className="mb-1.5 block text-sm text-gray-300">
