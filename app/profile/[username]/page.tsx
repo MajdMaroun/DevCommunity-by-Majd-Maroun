@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import ProfileView from "@/components/ProfileView";
 import { getCurrentUser, getUserByUsername } from "@/lib/queries/users";
 import { getPostsByAuthor } from "@/lib/queries/post";
+import { getRelationship } from "@/lib/queries/follow";
 
 export const dynamic = "force-dynamic";
 
@@ -22,5 +23,8 @@ export default async function PublicProfilePage({
   // Published posts only; other people's drafts stay private
   const posts = await getPostsByAuthor(user._id, false);
 
-  return <ProfileView user={user} posts={posts} />;
+  // Real follow state from the database, so it survives a refresh
+  const relationship = await getRelationship(me?._id ?? null, user._id);
+
+  return <ProfileView user={user} posts={posts} relationship={relationship} />;
 }

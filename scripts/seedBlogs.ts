@@ -8,7 +8,7 @@ const blogs = [
     slug: "getting-started-with-nextjs",
     content:
       "Next.js is a React framework for building modern full-stack web applications. It provides routing, server components, API routes, and more.",
-    author: "PUT_USER_ID_HERE",
+    author: "6ac7b5e68f4a177787bd2e45",
     image: "/images/nextjs.jpg",
   },
   {

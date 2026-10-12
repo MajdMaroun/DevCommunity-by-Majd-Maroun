@@ -23,9 +23,9 @@ async function seed() {
       skills: ["JavaScript", "React", "Next.js"],
     },
     {
-      name: "Sarah Engineer",
-      username: "sarah",
-      email: "sarah@example.com",
+      name: "Alex Davis",
+      username: "alex",
+      email: "alex@gmail.com",
       bio: "Software engineer and web development enthusiast.",
       skills: ["TypeScript", "Node.js", "MongoDB"],
     },

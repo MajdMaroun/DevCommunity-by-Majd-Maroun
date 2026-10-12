@@ -24,6 +24,117 @@ export async function getLatestPosts() {
   return posts;
 }
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export async function getPublishedPosts(topic?: string) {
+  await connectToDatabase();
+
+  const filter: Record<string, unknown> = { published: true };
+  if (topic) {
+    // exact match, any capitalization ("JavaScript" also matches "javascript")
+    filter.topics = new RegExp(`^${escapeRegex(topic)}$`, "i");
+  }
+
+  const posts = await Post.find(filter)
+    .populate({ path: "author", model: User, select: "name username image" })
+    .populate({ path: "community", model: Community, select: "name slug" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return JSON.parse(JSON.stringify(posts));
+}
+
+export async function getTrendingTopics(limit = 5) {
+  await connectToDatabase();
+
+  const rows = await Post.aggregate([
+    // Only published posts count
+    {
+      $match: {
+        published: true,
+      },
+    },
+
+    // One row per topic in each post
+    {
+      $unwind: "$topics",
+    },
+
+    // Clean topic name
+    {
+      $project: {
+        postId: "$_id",
+        label: {
+          $trim: {
+            input: "$topics",
+          },
+        },
+      },
+    },
+
+    // Make comparison case-insensitive
+    {
+      $addFields: {
+        key: {
+          $toLower: "$label",
+        },
+      },
+    },
+
+    // Ignore empty topics
+    {
+      $match: {
+        key: {
+          $ne: "",
+        },
+      },
+    },
+
+    // Same topic appearing twice in one post counts only once
+    {
+      $group: {
+        _id: {
+          post: "$postId",
+          key: "$key",
+        },
+        label: {
+          $min: "$label",
+        },
+      },
+    },
+
+    // Count how many posts belong to each topic
+    {
+      $group: {
+        _id: "$_id.key",
+        posts: {
+          $sum: 1,
+        },
+        label: {
+          $min: "$label",
+        },
+      },
+    },
+
+    // Highest count first
+    {
+      $sort: {
+        posts: -1,
+        _id: 1,
+      },
+    },
+
+    // Top N topics
+    {
+      $limit: limit,
+    },
+  ]);
+
+  return rows.map((r) => ({
+    topic: r.label as string,
+    posts: r.posts as number,
+  }));
+}
 
 export async function getPostBySlug(slug: string) {
   await connectToDatabase();

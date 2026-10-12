@@ -15,6 +15,7 @@ export type ProfilePost = {
 };
 
 type ProfileUser = {
+  _id: string;
   username?: string;
   name: string;
   title?: string;
@@ -30,12 +31,14 @@ export default function ProfileView({
   user,
   posts: postsProp,
   isOwnProfile = false,
+  relationship,
 }: {
   user: ProfileUser;
   posts?: ProfilePost[];
   isOwnProfile?: boolean;
+  // From the database: do I follow them / do they follow me
+  relationship?: { iFollow: boolean; followedBy: boolean };
 }) {
-  // Prefer the posts prop; fall back to user.posts
   const posts = postsProp ?? user.posts ?? [];
 
   const initials = (user.name || "?")
@@ -47,6 +50,9 @@ export default function ProfileView({
     .toUpperCase();
 
   const handle = user.username ?? user.email?.split("@")[0];
+
+  // Avoids "/profile/undefined/connections" when a user has no username yet
+  const base = user.username ? `/profile/${user.username}` : "/profile";
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10 text-white">
@@ -70,19 +76,11 @@ export default function ProfileView({
 
           {/* Name + title + username */}
           <div>
-            <h1 className="text-2xl font-bold">
-              {user.name}
-            </h1>
+            <h1 className="text-2xl font-bold">{user.name}</h1>
 
-            <p className="text-sm text-gray-400">
-              {user.title || "Developer"}
-            </p>
+            <p className="text-sm text-gray-400">{user.title || "Developer"}</p>
 
-            {handle && (
-              <p className="text-sm text-gray-500">
-                @{handle}
-              </p>
-            )}
+            {handle && <p className="text-sm text-gray-500">@{handle}</p>}
           </div>
         </div>
 
@@ -95,57 +93,47 @@ export default function ProfileView({
             Edit profile
           </Link>
         ) : (
-          <FollowButton />
+          <FollowButton
+            userId={user._id}
+            initialFollowing={relationship?.iFollow ?? false}
+            followedBy={relationship?.followedBy ?? false}
+          />
         )}
       </div>
 
       {/* Bio */}
-      {user.bio && (
-        <p className="mt-6 text-gray-300">
-          {user.bio}
-        </p>
-      )}
+      {user.bio && <p className="mt-6 text-gray-300">{user.bio}</p>}
 
       {/* Stats */}
       <div className="mt-6 flex gap-6 text-sm">
-        <span>
-          <strong className="text-white">
-            {user.followers ?? 0}
-          </strong>{" "}
-          <span className="text-gray-400">
-            followers
-          </span>
-        </span>
+        <Link
+          href={`${base}/connections?type=followers`}
+          className="hover:text-indigo-400"
+        >
+          <strong className="text-white">{user.followers ?? 0}</strong>{" "}
+          <span className="text-gray-400">followers</span>
+        </Link>
+
+        <Link
+          href={`${base}/connections?type=following`}
+          className="hover:text-indigo-400"
+        >
+          <strong className="text-white">{user.following ?? 0}</strong>{" "}
+          <span className="text-gray-400">following</span>
+        </Link>
 
         <span>
-          <strong className="text-white">
-            {user.following ?? 0}
-          </strong>{" "}
-          <span className="text-gray-400">
-            following
-          </span>
-        </span>
-
-        <span>
-          <strong className="text-white">
-            {posts.length}
-          </strong>{" "}
-          <span className="text-gray-400">
-            posts
-          </span>
+          <strong className="text-white">{posts.length}</strong>{" "}
+          <span className="text-gray-400">posts</span>
         </span>
       </div>
 
       {/* Posts */}
-      <h2 className="mb-4 mt-10 text-lg font-semibold">
-        Posts
-      </h2>
+      <h2 className="mb-4 mt-10 text-lg font-semibold">Posts</h2>
 
       <div className="space-y-3">
         {posts.length === 0 && (
-          <p className="text-sm text-gray-500">
-            No posts yet.
-          </p>
+          <p className="text-sm text-gray-500">No posts yet.</p>
         )}
 
         {posts.map((post) => (
@@ -162,18 +150,10 @@ export default function ProfileView({
 
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
               {post.createdAt && (
-                <span>
-                  {new Date(
-                    post.createdAt
-                  ).toLocaleDateString()}
-                </span>
+                <span>{new Date(post.createdAt).toLocaleDateString()}</span>
               )}
 
-              {post.community && (
-                <span>
-                  · {post.community.name}
-                </span>
-              )}
+              {post.community && <span>· {post.community.name}</span>}
 
               {post.published === false && (
                 <span className="rounded bg-yellow-500/15 px-2 py-0.5 text-yellow-300">

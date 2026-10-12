@@ -15,10 +15,11 @@ import {
   getLatestBlogs,
   getMyCommunities,
   getProfile,
-  getTrendingTopics,
 } from "@/app/(main)/home/page";
 
-export const dynamic = "force-dynamic"; // membership + trending change often
+import { getTrendingTopics } from "@/lib/queries/post";
+
+export const dynamic = "force-dynamic"; // trending change often
 
 /* ---------- helpers ---------- */
 
