@@ -9,6 +9,7 @@ import Post from "@/lib/models/Post";
 import Community from "@/lib/models/Community";
 import Like from "@/lib/models/Like";
 import Comment from "@/lib/models/Comment";
+import { notifyFollowers, unnotify } from "@/lib/notifications";
 import { getCurrentUserId } from "@/lib/queries/auth";
 
 export type EditPostState = { error?: string } | null;
@@ -90,6 +91,10 @@ export async function updatePostAction(
 
   if (!updated) return { error: "Post not found, or you are not its author." };
 
+  // Published: tell followers (once). Moved to draft: take the announcement back.
+  if (updated.published) await notifyFollowers(userId, postId);
+  else await unnotify({ type: "new_post", post: postId });
+
   refreshPages();
   redirect(`/blogs/${updated.slug}`); // slug stays the same, so old links keep working
 }
@@ -112,6 +117,7 @@ export async function deletePost(postId: string) {
     Like.deleteMany({ post: postId }),
     Comment.deleteMany({ post: postId }),
   ]);
+  await unnotify({ post: postId });
 
   refreshPages();
   return { ok: true as const };
@@ -133,6 +139,9 @@ export async function togglePublished(postId: string) {
   );
 
   if (!post) return { ok: false as const, error: "Post not found, or you are not its author." };
+
+  if (post.published) await notifyFollowers(userId, postId);
+  else await unnotify({ type: "new_post", post: postId });
 
   refreshPages();
   return { ok: true as const, published: !!post.published };

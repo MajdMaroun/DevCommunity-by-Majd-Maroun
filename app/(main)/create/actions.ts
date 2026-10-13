@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 import { getCurrentUser } from "@/lib/queries/users";
 import { createPost } from "@/lib/queries/post";
+import { notifyFollowers } from "@/lib/notifications";
 
 export type CreatePostState = { error?: string } | null;
 
@@ -52,7 +53,7 @@ export async function createPostAction(
     return { error: "Cover must be an image URL or an uploaded image." };
   }
 
-  await createPost({
+  const { slug } = await createPost({
     title,
     content,
     cover: cover || undefined,
@@ -61,6 +62,9 @@ export async function createPostAction(
     topics,
     published,
   });
+
+  // Tell everyone who follows the author (drafts stay private)
+  if (published) await notifyFollowers(user._id, slug);
 
   revalidatePath("/");
   revalidatePath("/blogs");

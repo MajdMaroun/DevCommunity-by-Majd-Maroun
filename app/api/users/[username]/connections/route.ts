@@ -1,4 +1,3 @@
-// app/api/users/[username]/connections/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -22,7 +21,14 @@ export async function GET(
   { params }: { params: Promise<{ username: string }> }
 ) {
   try {
-    const { username } = await params;
+    const { username: rawUsername } = await params;
+
+    let username = rawUsername;
+    try {
+      username = decodeURIComponent(rawUsername);
+    } catch {
+      // keep the raw value if it is not valid encoding
+    }
 
     const url = new URL(request.url);
     const type = url.searchParams.get("type");
@@ -54,8 +60,8 @@ export async function GET(
     // Skip rows whose user was deleted (populate returns null for them)
     const people = follows
       .map((follow) =>
-        (type === "followers" ? follow.follower : follow.following) as unknown as
-          | Person
+        (type === "followers" ? follow.follower : follow.following) as
+          unknown as Person
           | null
       )
       .filter((p): p is Person => !!p && typeof p === "object" && "_id" in p);

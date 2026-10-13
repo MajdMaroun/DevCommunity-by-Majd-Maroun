@@ -8,6 +8,7 @@ import Post from "@/lib/models/Post";
 import Like from "@/lib/models/Like";
 import Comment from "@/lib/models/Comment";
 import { getCurrentUserId } from "@/lib/queries/auth";
+import { notify, unnotify } from "@/lib/notifications";
 
 function refreshPost() {
   revalidatePath("/blogs/[slug]", "page");
@@ -45,6 +46,19 @@ export async function toggleLike(postId: string) {
 
   const count = await Like.countDocuments({ post: postId });
 
+  // Tell the post's author, and take it back if the like is removed
+  if (liked) {
+    await notify({
+      recipient: String(post.author),
+      actor: userId,
+      type: "like",
+      post: postId,
+      dedupe: true,
+    });
+  } else {
+    await unnotify({ actor: userId, type: "like", post: postId });
+  }
+
   refreshPost();
   return { ok: true as const, liked, count };
 }
@@ -68,7 +82,16 @@ export async function addComment(postId: string, content: string) {
     return { ok: false as const, error: "Post not found." };
   }
 
-  await Comment.create({ post: postId, author: userId, content: text });
+  const comment = await Comment.create({ post: postId, author: userId, content: text });
+
+  await notify({
+    recipient: String(post.author),
+    actor: userId,
+    type: "comment",
+    post: postId,
+    comment: String(comment._id),
+    text: text.slice(0, 80),
+  });
 
   refreshPost();
   return { ok: true as const };
@@ -98,6 +121,7 @@ export async function deleteComment(commentId: string) {
   }
 
   await Comment.deleteOne({ _id: commentId });
+  await unnotify({ comment: commentId });
 
   refreshPost();
   return { ok: true as const };

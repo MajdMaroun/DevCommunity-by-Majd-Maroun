@@ -5,6 +5,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import Follow from "@/lib/models/Follow";
 import { revalidatePath } from "next/cache";
+import { notify, unnotify } from "@/lib/notifications";
 
 // Profile pages show follower counts and the follow button state
 function refreshPages() {
@@ -53,6 +54,9 @@ export async function toggleFollow(targetUserId: string) {
       _id: existingFollow._id,
     });
 
+    // Unfollowing removes the "started following you" notification
+    await unnotify({ recipient: targetUserId, actor: currentUserId, type: "follow" });
+
     await User.findByIdAndUpdate(currentUserId, {
       $inc: { following: -1 },
     });
@@ -91,6 +95,13 @@ export async function toggleFollow(targetUserId: string) {
 
     throw error;
   }
+
+  await notify({
+    recipient: targetUserId,
+    actor: currentUserId,
+    type: "follow",
+    dedupe: true,
+  });
 
   await User.findByIdAndUpdate(currentUserId, {
     $inc: { following: 1 },

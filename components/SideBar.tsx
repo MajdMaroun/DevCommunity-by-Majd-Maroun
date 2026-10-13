@@ -10,12 +10,14 @@ import {
   User,
   Settings,
   type LucideIcon,
+  Bell,
 } from "lucide-react";
 
 const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Explore", icon: Compass },
   { href: "/communities", label: "Communities", icon: Users },
   { href: "/blogs", label: "Blogs", icon: FileText },
+  { href: "/notifications", label: "Notifications", icon: Bell},
   { href: "/bookmarks", label: "Bookmarks", icon: Bookmark },
   { href: "/profile", label: "Profile", icon: User },
   { href: "/settings", label: "Settings", icon: Settings },

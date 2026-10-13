@@ -11,7 +11,15 @@ export default async function PublicProfilePage({
 }: {
   params: Promise<{ username: string }>;
 }) {
-  const { username } = await params;
+  const { username: rawUsername } = await params;
+
+  // Next.js hands over the URL-encoded value ("lichaa%20mar"), so decode it before the lookup
+  let username = rawUsername;
+  try {
+    username = decodeURIComponent(rawUsername);
+  } catch {
+    // keep the raw value if it is not valid encoding
+  }
 
   const user = await getUserByUsername(username);
   if (!user) notFound();
