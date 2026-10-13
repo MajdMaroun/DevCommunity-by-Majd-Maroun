@@ -9,6 +9,7 @@ export interface IPost extends Document {
   community: mongoose.Types.ObjectId;
   topics: string[];
   published: boolean;
+  editedAt?: Date;
 }
 
 const PostSchema = new Schema<IPost>(
@@ -39,6 +40,10 @@ const PostSchema = new Schema<IPost>(
       required: true,
       index: true,
     },
+
+    cover: { type: String },
+
+    editedAt: { type: Date },
 
     community: {
       type: Schema.Types.ObjectId,

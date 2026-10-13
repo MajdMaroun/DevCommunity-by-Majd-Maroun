@@ -7,6 +7,8 @@ import { Types } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import Post from "@/lib/models/Post";
 import Community from "@/lib/models/Community";
+import Like from "@/lib/models/Like";
+import Comment from "@/lib/models/Comment";
 import { getCurrentUserId } from "@/lib/queries/auth";
 
 export type EditPostState = { error?: string } | null;
@@ -65,9 +67,24 @@ export async function updatePostAction(
   }
 
   // The author filter is the permission check: you can only edit your own posts
+  const existing = await Post.findOne({ _id: postId, author: userId }).lean();
+  if (!existing) return { error: "Post not found, or you are not its author." };
+
+  // "Edited" means the writing changed. Publishing or un-publishing alone does not count.
+  const changed =
+    existing.title !== title ||
+    existing.content !== content ||
+    (existing.cover ?? "") !== cover ||
+    String(existing.community) !== community ||
+    JSON.stringify(existing.topics ?? []) !== JSON.stringify(topics);
+
+  const set: Record<string, unknown> = { title, content, community, topics, published };
+  if (cover) set.cover = cover;
+  if (changed) set.editedAt = new Date();
+
   const updated = await Post.findOneAndUpdate(
     { _id: postId, author: userId },
-    { $set: { title, content, cover: cover || undefined, community, topics, published } },
+    cover ? { $set: set } : { $set: set, $unset: { cover: "" } }, // empty cover removes the field
     { new: true }
   );
 
@@ -89,6 +106,12 @@ export async function deletePost(postId: string) {
   if (res.deletedCount === 0) {
     return { ok: false as const, error: "Post not found, or you are not its author." };
   }
+
+  // Remove the post's likes and comments too, so nothing is left orphaned
+  await Promise.all([
+    Like.deleteMany({ post: postId }),
+    Comment.deleteMany({ post: postId }),
+  ]);
 
   refreshPages();
   return { ok: true as const };

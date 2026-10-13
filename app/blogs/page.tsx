@@ -25,6 +25,7 @@ interface BlogPost {
   author?: BlogAuthor;
   community?: BlogCommunity;
   createdAt: string | Date;
+  editedAt?: string | Date;
 }
 
 export const dynamic = "force-dynamic";
@@ -67,13 +68,15 @@ export default async function BlogsPage({
               key={post._id}
               className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-gray-900"
             >
-              {post.cover && (
-                <Link href={`/blogs/${post.slug}`}>
+              {/* No onError here: this is a server component, and event handlers
+                  cannot be passed to elements rendered on the server. */}
+              {post.cover?.trim() && (
+                <Link href={`/blogs/${post.slug}`} className="block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={post.cover}
-                    alt=""
-                    className="aspect-[2/1] w-full object-cover"
+                    src={post.cover.trim()}
+                    alt={`Cover image for ${post.title}`}
+                    className="block aspect-[2/1] w-full object-cover"
                   />
                 </Link>
               )}
@@ -124,6 +127,11 @@ export default async function BlogsPage({
                   )}
                   {" · "}
                   {new Date(post.createdAt).toLocaleDateString()}
+                  {post.editedAt && (
+                    <span title={new Date(post.editedAt).toLocaleString()}>
+                      {" · "}Edited {new Date(post.editedAt).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
               </div>
             </article>

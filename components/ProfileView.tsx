@@ -9,6 +9,7 @@ export type ProfilePost = {
   topics?: string[];
   published?: boolean;
   createdAt?: string;
+  editedAt?: string;
   community?: {
     name: string;
     slug: string;
@@ -152,6 +153,12 @@ export default function ProfileView({
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-400">
               {post.createdAt && (
                 <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              )}
+
+              {post.editedAt && (
+                <span title={new Date(post.editedAt).toLocaleString()}>
+                  · Edited {new Date(post.editedAt).toLocaleDateString()}
+                </span>
               )}
 
               {post.community && <span>· {post.community.name}</span>}

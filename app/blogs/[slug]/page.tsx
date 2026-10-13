@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PostActions from "@/components/PostActions";
+import LikeButton from "@/components/LikeButton";
+import CommentSection from "@/components/CommentSection";
+import { getLikeState } from "@/lib/queries/engagement";
 import { getPostBySlug } from "@/lib/queries/post";
 import { getCurrentUser } from "@/lib/queries/users";
 
@@ -15,13 +19,14 @@ export default async function BlogPostPage({
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
+  const me = await getCurrentUser();
+  const isAuthor = !!me && me._id === post.author?._id;
+
   // Drafts are only visible to their author
-  if (!post.published) {
-    const me = await getCurrentUser();
-    if (!me || me._id !== post.author?._id) notFound();
-  }
+  if (!post.published && !isAuthor) notFound();
 
   const author = post.author;
+  const like = await getLikeState(post._id, me?._id ?? null);
 
   return (
     <article className="mx-auto max-w-3xl px-6 py-10 text-white">
@@ -35,12 +40,12 @@ export default async function BlogPostPage({
       )}
 
       {post.cover && (
-       // eslint-disable-next-line @next/next/no-img-element
-       <img
-       src={post.cover}
-       alt=""
-       className="mb-6 aspect-[2/1] w-full rounded-xl object-cover"
-       />
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={post.cover}
+          alt=""
+          className="mb-6 mt-3 aspect-[2/1] w-full rounded-xl object-cover"
+        />
       )}
 
       <h1 className="mt-2 text-4xl font-bold tracking-tight">{post.title}</h1>
@@ -69,12 +74,32 @@ export default async function BlogPostPage({
         <span>·</span>
         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
 
+        {/* Shown only after the post's writing has been edited */}
+        {"editedAt" in post && typeof post.editedAt === "string" && (
+          <>
+            <span>·</span>
+            <span title={new Date(post.editedAt).toLocaleString()}>
+              Edited {new Date(post.editedAt).toLocaleDateString()}
+            </span>
+          </>
+        )}
+
         {!post.published && (
           <span className="rounded bg-yellow-500/15 px-2 py-0.5 text-xs text-yellow-300">
             Draft
           </span>
         )}
       </div>
+
+      {/* Edit / Publish / Delete, only for the author */}
+      {isAuthor && (
+        <PostActions
+          postId={post._id}
+          slug={post.slug}
+          published={post.published}
+          redirectTo="/profile"
+        />
+      )}
 
       {post.topics?.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -90,11 +115,29 @@ export default async function BlogPostPage({
         </div>
       )}
 
-      {/* Plain text with line breaks preserved. If you store Markdown,
-          render it with react-markdown instead. */}
       <div className="mt-8 whitespace-pre-wrap leading-relaxed text-gray-200">
         {post.content}
       </div>
+
+      {/* Likes and comments are for published posts only */}
+      {post.published && (
+        <>
+          <div className="mt-8 flex items-center gap-4 border-t border-gray-800 pt-6">
+            <LikeButton
+              postId={post._id}
+              initialLiked={like.liked}
+              initialCount={like.count}
+              signedIn={!!me}
+            />
+          </div>
+
+          <CommentSection
+            postId={post._id}
+            currentUserId={me?._id ?? null}
+            postAuthorId={post.author?._id ?? null}
+          />
+        </>
+      )}
     </article>
   );
 }

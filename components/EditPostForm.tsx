@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import CoverUpload from "@/components/CoverUpload";
 import Link from "next/link";
 import { updatePostAction, type EditPostState } from "@/app/actions/posts";
 
@@ -44,19 +45,7 @@ export default function EditPostForm({ post, communities }: Props) {
         />
       </div>
 
-      <div>
-        <label htmlFor="cover" className={labelClass}>
-          Cover image <span className="text-gray-500">(optional)</span>
-        </label>
-        <input
-          id="cover"
-          name="cover"
-          type="url"
-          defaultValue={post.cover ?? ""}
-          placeholder="https://..."
-          className={inputClass}
-        />
-      </div>
+      <CoverUpload defaultValue={post.cover ?? ""} />
 
       <div>
         <label htmlFor="community" className={labelClass}>

@@ -12,12 +12,12 @@ import JoinButton from "@/components/JoinButton";
 import { auth } from "@/auth";
 import {
   getFeaturedCommunities,
-  getLatestBlogs,
   getMyCommunities,
   getProfile,
 } from "@/app/(main)/home/page";
 
-import { getTrendingTopics } from "@/lib/queries/post";
+// getLatestBlogs now comes from here, because this version returns the cover image
+import { getTrendingTopics, getLatestBlogs } from "@/lib/queries/post";
 import { getFollowerCount } from "@/lib/queries/follow";
 
 export const dynamic = "force-dynamic"; // trending change often

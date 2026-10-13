@@ -3,6 +3,50 @@ import Post from "../models/Post";
 import User from "../models/User";
 import Community from "../models/Community";
 
+
+type LatestPostDoc = {
+  _id: unknown;
+  slug: string;
+  title: string;
+  content?: string;
+  cover?: string;
+  topics?: string[];
+  createdAt: Date;
+  author?: { name?: string; image?: string | null } | null;
+};
+ 
+export async function getLatestBlogs(limit = 3) {
+  await connectToDatabase();
+ 
+  const docs = await Post.find({ published: true })
+    .populate({ path: "author", model: User, select: "name image" })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+ 
+  return (docs as unknown as LatestPostDoc[]).map((p) => {
+    const content = String(p.content ?? "");
+    const words = content.trim().split(/\s+/).filter(Boolean).length;
+ 
+    return {
+      id: String(p._id),
+      slug: p.slug,
+      title: p.title,
+      excerpt: content.length > 160 ? `${content.slice(0, 160).trimEnd()}…` : content,
+      cover: p.cover || undefined, 
+      authorName: p.author?.name ?? "Unknown author",
+      authorImage: p.author?.image ?? null,
+      date: new Date(p.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      readMinutes: Math.max(1, Math.ceil(words / 200)),
+      topic: p.topics?.[0],
+    };
+  });
+}
+
 export async function getLatestPosts() {
   await connectToDatabase();
 
