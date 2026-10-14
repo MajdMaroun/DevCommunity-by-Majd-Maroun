@@ -1,8 +1,18 @@
 import Link from "next/link";
-import { getComments } from "@/lib/queries/engagement";
-import { CommentForm, DeleteCommentButton } from "@/components/CommentControls";
+import { getComments, type CommentItem } from "@/lib/queries/engagement";
+import { CommentForm, CommentActions } from "@/components/CommentControls";
 
-function Avatar({ name, image }: { name: string; image?: string | null }) {
+function Avatar({
+  name,
+  image,
+  size,
+}: {
+  name: string;
+  image?: string | null;
+  size: "md" | "sm";
+}) {
+  const box = size === "md" ? "h-8 w-8" : "h-7 w-7";
+
   if (image) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -10,10 +20,11 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
         src={image}
         alt=""
         referrerPolicy="no-referrer"
-        className="h-8 w-8 shrink-0 rounded-full object-cover"
+        className={`${box} shrink-0 rounded-full object-cover`}
       />
     );
   }
+
   const initials = name
     .split(" ")
     .filter(Boolean)
@@ -23,9 +34,88 @@ function Avatar({ name, image }: { name: string; image?: string | null }) {
     .toUpperCase();
 
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[11px] font-semibold text-white">
+    <span
+      className={`${box} flex shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-semibold text-white`}
+    >
       {initials}
     </span>
+  );
+}
+
+function CommentBlock({
+  c,
+  isReply,
+  postId,
+  currentUserId,
+  postAuthorId,
+}: {
+  c: CommentItem;
+  isReply: boolean;
+  postId: string;
+  currentUserId: string | null;
+  postAuthorId: string | null;
+}) {
+  const name = c.author?.name ?? "Deleted user";
+  const canDelete =
+    !!currentUserId && (currentUserId === c.author?._id || currentUserId === postAuthorId);
+
+  return (
+    <div id={`comment-${c._id}`} className="flex scroll-mt-24 gap-3">
+      <Avatar name={name} image={c.author?.image} size={isReply ? "sm" : "md"} />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          {c.author?.username ? (
+            <Link
+              href={`/profile/${encodeURIComponent(c.author.username)}`}
+              className="font-medium text-white hover:text-blue-300"
+            >
+              {name}
+            </Link>
+          ) : (
+            <span className="font-medium text-white">{name}</span>
+          )}
+          <span className="text-xs text-gray-500" suppressHydrationWarning>
+            {new Date(c.createdAt).toLocaleString()}
+          </span>
+        </div>
+
+        {isReply && c.replyTo && (
+          <p className="mt-0.5 text-xs text-gray-500">
+            replying to <span className="text-gray-400">{c.replyTo.name}</span>
+          </p>
+        )}
+
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
+          {c.content}
+        </p>
+
+        <CommentActions
+          postId={postId}
+          commentId={c._id}
+          initialLiked={c.liked}
+          initialLikeCount={c.likeCount}
+          signedIn={!!currentUserId}
+          canDelete={canDelete}
+          hasReplies={c.replies.length > 0}
+        />
+
+        {c.replies.length > 0 && (
+          <div className="mt-4 space-y-4 border-l border-gray-800 pl-4">
+            {c.replies.map((reply) => (
+              <CommentBlock
+                key={reply._id}
+                c={reply}
+                isReply
+                postId={postId}
+                currentUserId={currentUserId}
+                postAuthorId={postAuthorId}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -38,12 +128,12 @@ export default async function CommentSection({
   currentUserId: string | null;
   postAuthorId: string | null;
 }) {
-  const comments = await getComments(postId);
+  const { comments, total } = await getComments(postId, currentUserId);
 
   return (
-    <section className="mt-10 border-t border-gray-800 pt-8">
+    <section>
       <h2 className="mb-4 text-lg font-semibold">
-        Comments <span className="text-gray-500">({comments.length})</span>
+        Comments <span className="text-gray-500">({total})</span>
       </h2>
 
       {currentUserId ? (
@@ -57,46 +147,21 @@ export default async function CommentSection({
         </p>
       )}
 
-      <div className="mt-6 space-y-5">
+      <div className="mt-6 space-y-6">
         {comments.length === 0 && (
           <p className="text-sm text-gray-500">No comments yet. Be the first.</p>
         )}
 
-        {comments.map((c) => {
-          const name = c.author?.name ?? "Deleted user";
-          const canDelete =
-            !!currentUserId &&
-            (currentUserId === c.author?._id || currentUserId === postAuthorId);
-
-          return (
-            <div key={c._id} className="flex gap-3">
-              <Avatar name={name} image={c.author?.image} />
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  {c.author?.username ? (
-                    <Link
-                      href={`/profile/${c.author.username}`}
-                      className="font-medium text-white hover:text-blue-300"
-                    >
-                      {name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium text-white">{name}</span>
-                  )}
-                  <span className="text-xs text-gray-500">
-                    {new Date(c.createdAt).toLocaleString()}
-                  </span>
-                  {canDelete && <DeleteCommentButton commentId={c._id} />}
-                </div>
-
-                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
-                  {c.content}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+        {comments.map((c) => (
+          <CommentBlock
+            key={c._id}
+            c={c}
+            isReply={false}
+            postId={postId}
+            currentUserId={currentUserId}
+            postAuthorId={postAuthorId}
+          />
+        ))}
       </div>
     </section>
   );

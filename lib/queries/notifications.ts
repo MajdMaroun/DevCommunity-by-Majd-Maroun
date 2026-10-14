@@ -3,9 +3,12 @@ import Notification from "@/lib/models/Notification";
 import User from "@/lib/models/User";
 import Post from "@/lib/models/Post";
 
+// These open the post scrolled to the comment itself
+const COMMENT_TYPES = ["comment", "reply", "comment_like"];
+
 export type NotificationItem = {
   id: string;
-  type: "follow" | "like" | "comment" | "new_post";
+  type: "follow" | "like" | "comment" | "reply" | "comment_like" | "new_post";
   text: string;
   createdAt: string;
   read: boolean;
@@ -17,6 +20,7 @@ export type NotificationItem = {
 type Row = {
   _id: unknown;
   type: NotificationItem["type"];
+  comment?: unknown;
   text?: string;
   createdAt: Date;
   readAt?: Date | null;
@@ -65,7 +69,11 @@ export async function getNotificationItems(
           ? n.actor?.username
             ? `/profile/${encodeURIComponent(n.actor.username)}`
             : "/profile"
-          : `/blogs/${n.post?.slug}`,
+          : `/blogs/${n.post?.slug}${
+              n.comment && COMMENT_TYPES.includes(n.type)
+                ? `#comment-${String(n.comment)}`
+                : ""
+            }`,
     }));
 
   return { items, unread };

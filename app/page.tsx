@@ -171,12 +171,12 @@ export default async function Home() {
       <div className="min-w-0 space-y-6">
         {/* Hero */}
         <section
-          className={`${card} relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-8 py-8`}
+          className={`${card} relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-5 py-6 sm:px-8 sm:py-8`}
         >
           <p className="mb-2 text-[11px] font-semibold tracking-[0.2em] text-blue-400">
             BUILD • SHARE • LEARN
           </p>
-          <h1 className="text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Explore developer communities
           </h1>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
@@ -253,17 +253,17 @@ export default async function Home() {
           ) : (
             <div className={`${card} divide-y divide-slate-800`}>
               {blogs.map((b) => (
-                <article key={b.id} className="flex items-center gap-4 p-3">
+                <article key={b.id} className="flex flex-wrap items-start gap-3 p-3 sm:flex-nowrap sm:items-center sm:gap-4">
                   <Link href={`/blogs/${b.slug}`} className="shrink-0">
                     {b.cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={b.cover}
                         alt=""
-                        className="h-[62px] w-[132px] rounded-md object-cover"
+                        className="h-[62px] w-[100px] rounded-md object-cover sm:w-[132px]"
                       />
                     ) : (
-                      <div className="h-[62px] w-[132px] rounded-md bg-gradient-to-br from-slate-800 to-slate-900" />
+                      <div className="h-[62px] w-[100px] rounded-md bg-gradient-to-br from-slate-800 to-slate-900 sm:w-[132px]" />
                     )}
                   </Link>
 
@@ -300,7 +300,7 @@ export default async function Home() {
                   />
                   <Link
                     href={`/blogs/${b.slug}`}
-                    className="hidden rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 sm:block"
+                    className="hidden rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 md:block"
                   >
                     Read Blog
                   </Link>
@@ -334,7 +334,7 @@ export default async function Home() {
             )}
 
             {(profile.location || profile.joined) && (
-              <div className="mt-4 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
                 {profile.location && (
                   <span className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" /> {profile.location}

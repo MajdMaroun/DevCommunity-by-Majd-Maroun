@@ -1,6 +1,12 @@
 import mongoose, { Schema, Model } from "mongoose";
 
-export type NotificationType = "follow" | "like" | "comment" | "new_post";
+export type NotificationType =
+  | "follow"
+  | "like"
+  | "comment"
+  | "reply"
+  | "comment_like"
+  | "new_post";
 
 export interface INotification {
   recipient: mongoose.Types.ObjectId; // who gets it
@@ -19,7 +25,7 @@ const NotificationSchema = new Schema<INotification>(
     actor: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
-      enum: ["follow", "like", "comment", "new_post"],
+      enum: ["follow", "like", "comment", "reply", "comment_like", "new_post"],
       required: true,
     },
     post: { type: Schema.Types.ObjectId, ref: "Post" },

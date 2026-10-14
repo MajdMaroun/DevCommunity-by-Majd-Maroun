@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bell, FileText, Heart, MessageCircle, UserPlus, X } from "lucide-react";
+import { Bell, FileText, Heart, MessageCircle, Reply, UserPlus, X } from "lucide-react";
 import {
   dismissNotification,
   clearAllNotifications,
@@ -12,7 +12,18 @@ import {
 import type { NotificationItem } from "@/lib/queries/notifications";
 
 type View = "unread" | "recent";
-type Filter = "all" | NotificationItem["type"];
+type Filter = "all" | "follow" | "like" | "comment" | "new_post";
+
+// "Likes" also covers comment likes, and "Comments" also covers replies
+const GROUPS: Record<Exclude<Filter, "all">, NotificationItem["type"][]> = {
+  follow: ["follow"],
+  like: ["like", "comment_like"],
+  comment: ["comment", "reply"],
+  new_post: ["new_post"],
+};
+
+const matches = (n: NotificationItem, filter: Filter) =>
+  filter === "all" || GROUPS[filter].includes(n.type);
 
 const TABS: { key: Filter; label: string }[] = [
   { key: "all", label: "All" },
@@ -25,7 +36,8 @@ const TABS: { key: Filter; label: string }[] = [
 function Icon({ type }: { type: NotificationItem["type"] }) {
   const cls = "h-[18px] w-[18px]";
   if (type === "follow") return <UserPlus className={cls} />;
-  if (type === "like") return <Heart className={cls} />;
+  if (type === "like" || type === "comment_like") return <Heart className={cls} />;
+  if (type === "reply") return <Reply className={cls} />;
   if (type === "comment") return <MessageCircle className={cls} />;
   return <FileText className={cls} />;
 }
@@ -35,10 +47,11 @@ function Message({ n }: { n: NotificationItem }) {
 
   if (n.type === "follow") return <>{who} started following you</>;
   if (n.type === "like") return <>{who} liked your post &ldquo;{n.postTitle}&rdquo;</>;
-  if (n.type === "comment") {
+  if (n.type === "comment_like") return <>{who} liked your comment on &ldquo;{n.postTitle}&rdquo;</>;
+  if (n.type === "comment" || n.type === "reply") {
     return (
       <>
-        {who} commented on &ldquo;{n.postTitle}&rdquo;
+        {who} {n.type === "reply" ? "replied to your comment on" : "commented on"} &ldquo;{n.postTitle}&rdquo;
         {n.text && <span className="block truncate text-gray-400">{n.text}</span>}
       </>
     );
@@ -96,7 +109,7 @@ export default function NotificationsList({
   }
 
   const base = view === "unread" ? items.filter((n) => !n.read) : items;
-  const visible = filter === "all" ? base : base.filter((n) => n.type === filter);
+  const visible = base.filter((n) => matches(n, filter));
 
   return (
     <div>
@@ -147,7 +160,7 @@ export default function NotificationsList({
       <div className="mb-5 flex flex-wrap gap-2">
         {TABS.map((tab) => {
           const count =
-            tab.key === "all" ? base.length : base.filter((n) => n.type === tab.key).length;
+            base.filter((n) => matches(n, tab.key)).length;
 
           return (
             <button

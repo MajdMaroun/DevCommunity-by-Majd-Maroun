@@ -28,6 +28,7 @@ export async function notify(input: NotifyInput) {
         actor: input.actor,
         type: input.type,
         ...(input.post ? { post: input.post } : {}),
+        ...(input.comment ? { comment: input.comment } : {}),
       });
       if (exists) return;
     }

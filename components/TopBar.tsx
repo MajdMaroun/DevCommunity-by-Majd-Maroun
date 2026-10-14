@@ -12,6 +12,7 @@ import {
   Heart,
   MessageCircle,
   UserPlus,
+  Reply,
   LoaderCircle,
   RefreshCw,
 } from "lucide-react";
@@ -30,7 +31,7 @@ type TopbarProfile = {
 
 type NotificationItem = {
   id: string;
-  type: "follow" | "like" | "comment" | "new_post";
+  type: "follow" | "like" | "comment" | "reply" | "comment_like" | "new_post";
   text: string;
   createdAt: string;
   actorName: string;
@@ -375,10 +376,6 @@ export default function Topbar({
   };
 
   const notificationText = (notification: NotificationItem) => {
-    if (notification.text.trim()) {
-      return notification.text;
-    }
-
     const actorName = notification.actorName || "Someone";
 
     switch (notification.type) {
@@ -386,19 +383,19 @@ export default function Topbar({
         return `${actorName} started following you.`;
 
       case "like":
-        return `${actorName} liked your post${
-          notification.postTitle ? `: ${notification.postTitle}` : ""
-        }.`;
+        return `${actorName} liked your post.`;
 
       case "comment":
-        return `${actorName} commented on your post${
-          notification.postTitle ? `: ${notification.postTitle}` : ""
-        }.`;
+        return `${actorName} commented on your post.`;
+
+      case "comment_like":
+        return `${actorName} liked your comment.`;
+
+      case "reply":
+        return `${actorName} replied to your comment.`;
 
       case "new_post":
-        return `${actorName} published a new post${
-          notification.postTitle ? `: ${notification.postTitle}` : ""
-        }.`;
+        return `${actorName} published a new post.`;
 
       default:
         return `${actorName} sent you a notification.`;
@@ -415,6 +412,12 @@ export default function Topbar({
 
       case "comment":
         return <MessageCircle size={17} />;
+
+      case "comment_like":
+        return <Heart size={17} />;
+
+      case "reply":
+        return <Reply size={17} />;
 
       case "new_post":
         return <FileText size={17} />;
@@ -716,6 +719,14 @@ export default function Topbar({
                         <span className="block text-sm leading-5 text-gray-200">
                           {notificationText(notification)}
                         </span>
+
+                        {(notification.type === "comment" ||
+                          notification.type === "reply") &&
+                          notification.text && (
+                            <span className="mt-1 block truncate text-xs italic text-gray-400">
+                              &ldquo;{notification.text}&rdquo;
+                            </span>
+                          )}
 
                         {notification.postTitle && (
                           <span className="mt-1 block truncate text-xs text-gray-400">

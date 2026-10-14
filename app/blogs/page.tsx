@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { X } from "lucide-react";
+import BookmarkButton from "@/components/BookmarkButton";
 import { getPublishedPosts } from "@/lib/queries/post";
 
 interface BlogPageSearchParams {
@@ -30,6 +32,10 @@ interface BlogPost {
 
 export const dynamic = "force-dynamic";
 
+/* same tokens as the home page */
+const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
+const chip = "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300";
+
 export default async function BlogsPage({
   searchParams,
 }: {
@@ -39,103 +45,145 @@ export default async function BlogsPage({
   const posts: BlogPost[] = await getPublishedPosts(topic);
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-12">
-      <h1 className="mb-2 text-3xl font-bold text-white">
-        {topic ? `Posts about ${topic}` : "Latest Blogs"}
-      </h1>
+    <main className="mx-auto min-w-0 max-w-7xl space-y-5 px-4 py-6 text-white sm:px-6 sm:py-10">
+      {/* Page header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-bold tracking-tight sm:text-3xl">
+            {topic ? `Posts about ${topic}` : "Latest Blogs"}
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {topic
+              ? `Showing posts tagged #${topic}.`
+              : "Discover the latest posts from the DevCommunity."}
+          </p>
+        </div>
 
-      <p className="mb-8 text-gray-400">
-        {topic ? (
-          <>
-            Showing posts tagged #{topic}.{" "}
-            <Link href="/blogs" className="text-blue-400 hover:text-blue-300">
-              Clear filter
-            </Link>
-          </>
-        ) : (
-          "Discover the latest posts from the DevCommunity."
+        {topic && (
+          <Link
+            href="/blogs"
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800"
+          >
+            #{topic} <X className="h-3.5 w-3.5 text-slate-400" />
+            <span className="sr-only">Clear filter</span>
+          </Link>
         )}
-      </p>
+      </div>
 
       {posts.length === 0 ? (
-        <p className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-sm text-gray-400">
-          {topic ? `No posts about ${topic} yet.` : "No posts yet."}
+        <p className={`${card} p-6 text-sm text-slate-400`}>
+          {topic ? (
+            <>
+              No posts about {topic} yet.{" "}
+              <Link href="/blogs" className="text-blue-400 hover:text-blue-300">
+                See all posts
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              No posts yet. Be the first to{" "}
+              <Link href="/create" className="text-blue-400 hover:text-blue-300">
+                write one
+              </Link>
+              .
+            </>
+          )}
         </p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => (
-            <article
-              key={post._id}
-              className="flex flex-col overflow-hidden rounded-xl border border-gray-800 bg-gray-900"
-            >
-              {/* No onError here: this is a server component, and event handlers
-                  cannot be passed to elements rendered on the server. */}
-              {post.cover?.trim() && (
-                <Link href={`/blogs/${post.slug}`} className="block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={post.cover.trim()}
-                    alt={`Cover image for ${post.title}`}
-                    className="block aspect-[2/1] w-full object-cover"
-                  />
-                </Link>
-              )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post) => {
+            const href = `/blogs/${post.slug}`;
+            const cover = post.cover?.trim();
 
-              <div className="flex flex-1 flex-col p-6">
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {post.topics.map((t) => (
-                    <Link
-                      key={t}
-                      href={`/blogs?topic=${encodeURIComponent(t)}`}
-                      className="rounded-full bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700"
-                    >
-                      #{t}
-                    </Link>
-                  ))}
-                </div>
-
-                <Link href={`/blogs/${post.slug}`}>
-                  <h2 className="mb-3 text-xl font-semibold text-white hover:text-blue-300">
-                    {post.title}
-                  </h2>
+            return (
+              <article
+                key={post._id}
+                className={`${card} flex min-w-0 flex-col overflow-hidden transition hover:border-slate-700`}
+              >
+                {/* No onError here: this is a server component. */}
+                <Link href={href} className="block" tabIndex={-1} aria-hidden>
+                  {cover ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cover}
+                      alt=""
+                      className="block aspect-[2/1] w-full object-cover"
+                    />
+                  ) : (
+                    <div className="aspect-[2/1] w-full bg-gradient-to-br from-slate-800 to-slate-900" />
+                  )}
                 </Link>
 
-                <p className="mb-4 line-clamp-3 text-gray-400">{post.content}</p>
+                <div className="flex flex-1 flex-col p-4">
+                  {post.topics.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {post.topics.slice(0, 3).map((t) => (
+                        <Link
+                          key={t}
+                          href={`/blogs?topic=${encodeURIComponent(t)}`}
+                          className={`${chip} hover:bg-slate-700`}
+                        >
+                          #{t}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
 
-                <div className="mt-auto text-sm text-gray-500">
-                  By{" "}
-                  {post.author?.username ? (
-                    <Link
-                      href={`/profile/${post.author.username}`}
-                      className="hover:text-white"
-                    >
-                      {post.author.name}
+                  <div className="flex items-start gap-2">
+                    <Link href={href} className="min-w-0 flex-1">
+                      <h2 className="line-clamp-2 break-words text-base font-semibold text-white hover:text-blue-300">
+                        {post.title}
+                      </h2>
                     </Link>
-                  ) : (
-                    (post.author?.name ?? "Unknown author")
-                  )}
-                  {" · "}
-                  {post.community ? (
-                    <Link
-                      href={`/communities/${post.community.slug}`}
-                      className="hover:text-white"
-                    >
-                      {post.community.name}
-                    </Link>
-                  ) : (
-                    "No community"
-                  )}
-                  {" · "}
-                  {new Date(post.createdAt).toLocaleDateString()}
-                  {post.editedAt && (
-                    <span title={new Date(post.editedAt).toLocaleString()}>
-                      {" · "}Edited {new Date(post.editedAt).toLocaleDateString()}
-                    </span>
-                  )}
+                    <BookmarkButton post={{ id: post._id, title: post.title, href }} />
+                  </div>
+
+                  <p className="mb-4 mt-1.5 line-clamp-3 text-xs leading-relaxed text-slate-400">
+                    {post.content}
+                  </p>
+
+                  {/* Footer pinned to the bottom of the card */}
+                  <div className="mt-auto space-y-1 border-t border-slate-800 pt-3 text-[11px] text-slate-400">
+                    <p className="truncate">
+                      By{" "}
+                      {post.author?.username ? (
+                        <Link
+                          href={`/profile/${post.author.username}`}
+                          className="text-slate-300 hover:text-white"
+                        >
+                          {post.author.name}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-300">
+                          {post.author?.name ?? "Unknown author"}
+                        </span>
+                      )}
+                      {post.community && (
+                        <>
+                          {" in "}
+                          <Link
+                            href={`/communities/${post.community.slug}`}
+                            className="text-blue-400 hover:text-blue-300"
+                          >
+                            {post.community.name}
+                          </Link>
+                        </>
+                      )}
+                    </p>
+                    <p>
+                      {new Date(post.createdAt).toLocaleDateString()}
+                      {post.editedAt && (
+                        <span title={new Date(post.editedAt).toLocaleString()}>
+                          {" · "}Edited {new Date(post.editedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </main>

@@ -1,3 +1,4 @@
+// app/actions/posts.ts
 "use server";
 
 import "server-only";
@@ -9,6 +10,7 @@ import Post from "@/lib/models/Post";
 import Community from "@/lib/models/Community";
 import Like from "@/lib/models/Like";
 import Comment from "@/lib/models/Comment";
+import CommentLike from "@/lib/models/CommentLike";
 import { notifyFollowers, unnotify } from "@/lib/notifications";
 import { getCurrentUserId } from "@/lib/queries/auth";
 
@@ -113,8 +115,10 @@ export async function deletePost(postId: string) {
   }
 
   // Remove the post's likes and comments too, so nothing is left orphaned
+  const commentIds = await Comment.find({ post: postId }).distinct("_id");
   await Promise.all([
     Like.deleteMany({ post: postId }),
+    CommentLike.deleteMany({ comment: { $in: commentIds } }),
     Comment.deleteMany({ post: postId }),
   ]);
   await unnotify({ post: postId });
