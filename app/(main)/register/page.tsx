@@ -70,11 +70,14 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Registration failed");
-        return;
-      }
+     setError(data.error || "Registration failed");
+     return;
+     }
 
-      router.push("/login");
+     router.push(
+     data.redirectTo ||
+     `/verify?email=${encodeURIComponent(email.trim().toLowerCase())}`
+     );
     } catch {
       setError("Something went wrong");
     } finally {
