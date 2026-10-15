@@ -2,6 +2,7 @@ import Sidebar from "@/components/SideBar";
 import Topbar from "@/components/TopBar";
 import Providers from "@/components/Providers";
 import Footer from "@/components/Footer";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export default function RootLayout({
@@ -25,6 +26,8 @@ export default function RootLayout({
             </div>
           </div>
         </Providers>
+
+        <Analytics />
       </body>
     </html>
   );
