@@ -1,18 +1,27 @@
 import { Types } from "mongoose";
-import { connectToDatabase } from "@/lib/mongodb"
+import { connectToDatabase } from "@/lib/mongodb";
 import Community from "@/lib/models/Community";
 
 export async function getAllCommunities(userId: string | null) {
-  await connectToDatabase(); // same import as your action
+  await connectToDatabase();
+
   const uid = userId ? new Types.ObjectId(userId) : null;
 
   const rows = await Community.aggregate([
     { $sort: { createdAt: -1 } },
     {
       $project: {
-        slug: 1, name: 1, description: 1, logo: 1, topics: 1,
-        memberCount: { $size: { $ifNull: ["$members", []] } },
-        joined: uid ? { $in: [uid, { $ifNull: ["$members", []] }] } : false,
+        slug: 1,
+        name: 1,
+        description: 1,
+        logo: 1,
+        topics: 1,
+        memberCount: {
+          $size: { $ifNull: ["$members", []] },
+        },
+        joined: uid
+          ? { $in: [uid, { $ifNull: ["$members", []] }] }
+          : { $literal: false },
       },
     },
   ]);
@@ -29,14 +38,18 @@ export async function getAllCommunities(userId: string | null) {
   }));
 }
 
-export async function getCommunityBySlug(slug: string, userId: string | null) {
+export async function getCommunityBySlug(
+  slug: string,
+  userId: string | null
+) {
   await connectToDatabase();
- 
+
   const c = await Community.findOne({ slug }).lean();
+
   if (!c) return null;
- 
+
   const members = (c.members ?? []).map((m: unknown) => String(m));
- 
+
   return {
     id: String(c._id),
     slug: c.slug,
@@ -49,3 +62,4 @@ export async function getCommunityBySlug(slug: string, userId: string | null) {
     joined: userId ? members.includes(userId) : false,
   };
 }
+

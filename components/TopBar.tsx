@@ -458,7 +458,7 @@ export default function Topbar({
     "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-200 transition hover:bg-gray-800";
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-gray-800 bg-gray-950/90 px-6 py-3 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-gray-800 bg-gray-950/90 px-6 py-3 backdrop-blur-xl sm:gap-4 sm:px-6">
       {/* Search */}
       <div className="relative w-full max-w-md" ref={searchRef}>
         <div className="flex items-center gap-2 rounded-xl border border-gray-800 bg-gray-900/80 px-3 py-2.5 text-gray-400 transition focus-within:border-indigo-500/60 focus-within:ring-2 focus-within:ring-indigo-500/10">

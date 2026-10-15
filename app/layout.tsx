@@ -13,12 +13,12 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-gray-950 text-white">
         <Providers>
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen pb-20 md:pb-0">
             <Sidebar />
 
             <div className="flex min-w-0 flex-1 flex-col">
               <Topbar />
-              
+
               <main className="flex-1 p-6">{children}</main>
 
               <Footer />

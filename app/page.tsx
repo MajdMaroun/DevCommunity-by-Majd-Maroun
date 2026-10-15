@@ -253,40 +253,48 @@ export default async function Home() {
           ) : (
             <div className={`${card} divide-y divide-slate-800`}>
               {blogs.map((b) => (
-                <article key={b.id} className="flex flex-wrap items-start gap-3 p-3 sm:flex-nowrap sm:items-center sm:gap-4">
-                  <Link href={`/blogs/${b.slug}`} className="shrink-0">
+                // Phones: a stacked card (big cover, text, then buttons).
+                // From the "sm" breakpoint up: one compact row, as before.
+                <article
+                  key={b.id}
+                  className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4"
+                >
+                  {/* Cover */}
+                  <Link href={`/blogs/${b.slug}`} className="block shrink-0 sm:w-[132px]">
                     {b.cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={b.cover}
                         alt=""
-                        className="h-[62px] w-[100px] rounded-md object-cover sm:w-[132px]"
+                        className="aspect-[16/9] w-full rounded-lg object-cover sm:aspect-auto sm:h-[74px]"
                       />
                     ) : (
-                      <div className="h-[62px] w-[100px] rounded-md bg-gradient-to-br from-slate-800 to-slate-900 sm:w-[132px]" />
+                      <div className="aspect-[16/9] w-full rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 sm:aspect-auto sm:h-[74px]" />
                     )}
                   </Link>
 
+                  {/* Text */}
                   <div className="min-w-0 flex-1">
                     <Link href={`/blogs/${b.slug}`}>
-                      <h3 className="truncate text-sm font-semibold text-white hover:text-blue-300">
+                      <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-white hover:text-blue-300 sm:line-clamp-1">
                         {b.title}
                       </h3>
                     </Link>
 
-                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{b.excerpt}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                    <p className="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-400">
+                      {b.excerpt}
+                    </p>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-400">
                       <Avatar
                         src={b.authorImage}
                         name={b.authorName}
                         className="h-5 w-5"
                         textClass="text-[8px]"
                       />
-                      <span>{b.authorName}</span>
-                      <span>·</span>
+                      <span className="max-w-[10rem] truncate">{b.authorName}</span>
+                      <span aria-hidden="true">·</span>
                       <span>{b.date}</span>
-                      <span>·</span>
-                      <span>{b.readMinutes} min read</span>
                       {b.topic && (
                         <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-blue-300">
                           {b.topic}
@@ -295,15 +303,21 @@ export default async function Home() {
                     </div>
                   </div>
 
-                  <BookmarkButton
-                    post={{ id: b.id, title: b.title, href: `/blogs/${b.slug}` }}
-                  />
-                  <Link
-                    href={`/blogs/${b.slug}`}
-                    className="hidden rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 md:block"
-                  >
-                    Read Blog
-                  </Link>
+                  {/* Actions: on phones "Read blog" is a wide button with the bookmark beside it */}
+                  <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
+                    <Link
+                      href={`/blogs/${b.slug}`}
+                      className="order-1 flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-center text-xs font-medium text-slate-200 transition hover:bg-slate-800 sm:order-2 sm:flex-none sm:py-2"
+                    >
+                      Read Blog
+                    </Link>
+
+                    <div className="order-2 sm:order-1">
+                      <BookmarkButton
+                        post={{ id: b.id, title: b.title, href: `/blogs/${b.slug}` }}
+                      />
+                    </div>
+                  </div>
                 </article>
               ))}
             </div>

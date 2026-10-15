@@ -33,7 +33,7 @@ username: {
 
 title: {
   type: String,
-  default: "Developer",
+  default: "",
   trim: true,
   maxlength: 50,
 },

@@ -1,9 +1,7 @@
 "use server";
 
 import "server-only";
-
 import { revalidatePath } from "next/cache";
-
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { getCurrentUserId } from "@/lib/queries/auth";
@@ -24,15 +22,11 @@ export async function updateProfile(
   }
 
   const name = String(formData.get("name") ?? "").trim();
-
   const username = String(formData.get("username") ?? "")
     .trim()
     .toLowerCase();
-
   const title = String(formData.get("title") ?? "").trim();
-
   const bio = String(formData.get("bio") ?? "").trim();
-
   const image = String(formData.get("image") ?? "").trim();
 
   // Validate name
@@ -52,11 +46,11 @@ export async function updateProfile(
     };
   }
 
-  // Validate title
-  if (title.length < 1 || title.length > 50) {
+  // Validate professional title (optional)
+  if (title.length > 50) {
     return {
       ok: false,
-      message: "Professional title must be 1 to 50 characters.",
+      message: "Professional title must be at most 50 characters.",
     };
   }
 
@@ -68,10 +62,7 @@ export async function updateProfile(
     };
   }
 
-  // Accept:
-  // - empty (remove)
-  // - existing http(s) URL
-  // - JPEG data URL produced by the upload form
+  // Validate profile image
   const isUrl = /^https?:\/\/.+/i.test(image);
 
   const isUpload =
@@ -91,21 +82,21 @@ export async function updateProfile(
     };
   }
 
-  await connectToDatabase();
-
-  const taken = await User.exists({
-    username,
-    _id: { $ne: userId },
-  });
-
-  if (taken) {
-    return {
-      ok: false,
-      message: "That username is already taken.",
-    };
-  }
-
   try {
+    await connectToDatabase();
+
+    const taken = await User.exists({
+      username,
+      _id: { $ne: userId },
+    });
+
+    if (taken) {
+      return {
+        ok: false,
+        message: "That username is already taken.",
+      };
+    }
+
     await User.updateOne(
       { _id: userId },
       {

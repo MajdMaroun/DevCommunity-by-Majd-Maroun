@@ -185,26 +185,25 @@ export default function SettingsForm({ user }: Props) {
         />
       </div>
 
-      {/* Professional Title */}
-      <div>
-        <label htmlFor="title" className={label}>
-          Professional Title
-        </label>
+{/* Professional Title */}
+<div>
+  <label htmlFor="title" className={label}>
+    Professional Title (Optional)
+  </label>
 
-        <input
-          id="title"
-          name="title"
-          defaultValue={user.title ?? "Developer"}
-          required
-          maxLength={50}
-          placeholder="e.g. Full Stack Developer"
-          className={input}
-        />
+  <input
+    id="title"
+    name="title"
+    defaultValue={user.title ?? ""}
+    maxLength={50}
+    placeholder="e.g. Student, Designer, Software Engineer"
+    className={input}
+  />
 
-        <p className="mt-1 text-[11px] text-slate-500">
-          This appears below your name on your profile.
-        </p>
-      </div>
+  <p className="mt-1 text-[11px] text-slate-500">
+    Tell people what you do. Leave empty if you prefer.
+  </p>
+</div>
 
       {/* Username */}
       <div>

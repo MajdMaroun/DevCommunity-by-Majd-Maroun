@@ -10,7 +10,7 @@ export default async function CreatePage() {
   const communities = await getCommunityOptions();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10 text-white">
+    <div className="mx-auto max-w-2xl text-white">
       <h1 className="text-2xl font-bold">Create post</h1>
       <p className="mt-1 mb-8 text-sm text-gray-400">
         Share something with a community.

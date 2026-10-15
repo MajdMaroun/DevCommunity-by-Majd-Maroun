@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, User } from "lucide-react";
 
-// Edit your links here. Delete an entry to remove it from the menu.
 const CONTACTS = [
   {
     key: "instagram",
@@ -36,7 +35,6 @@ const CONTACTS = [
   {
     key: "whatsapp",
     label: "WhatsApp",
-    // The number is only inside the link, it is not printed on the page
     sub: "Send me a message",
     href: "https://wa.me/96181740994?text=Hi%20Majd%2C%20I%20found%20you%20through%20DevCommunity",
     hover: "group-hover:text-green-400",
@@ -45,7 +43,13 @@ const CONTACTS = [
 
 type ContactKey = (typeof CONTACTS)[number]["key"];
 
-function BrandIcon({ name, className = "" }: { name: ContactKey; className?: string }) {
+function BrandIcon({
+  name,
+  className = "",
+}: {
+  name: ContactKey;
+  className?: string;
+}) {
   const props = {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -53,7 +57,7 @@ function BrandIcon({ name, className = "" }: { name: ContactKey; className?: str
     strokeWidth: 2,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
-    "aria-hidden": true,
+    "aria-hidden": true as const,
     className,
   };
 
@@ -62,7 +66,13 @@ function BrandIcon({ name, className = "" }: { name: ContactKey; className?: str
       <svg {...props}>
         <rect x="3" y="3" width="18" height="18" rx="5" />
         <circle cx="12" cy="12" r="4" />
-        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        <circle
+          cx="17.5"
+          cy="6.5"
+          r="1"
+          fill="currentColor"
+          stroke="none"
+        />
       </svg>
     );
   }
@@ -85,14 +95,15 @@ function BrandIcon({ name, className = "" }: { name: ContactKey; className?: str
       </svg>
     );
   }
+
   if (name === "gmail") {
-  return (
-    <svg {...props}>
-      <path d="M3 6l9 7 9-7" />
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-    </svg>
-  );
-}
+    return (
+      <svg {...props}>
+        <path d="M3 6l9 7 9-7" />
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+      </svg>
+    );
+  }
 
   return (
     <svg {...props}>
@@ -106,79 +117,99 @@ export default function Footer() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close when clicking outside or pressing Escape
   useEffect(() => {
     if (!open) return;
 
-    const onMouseDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+    const handleOutsideInteraction = (event: PointerEvent) => {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
     };
 
-    document.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("keydown", onKeyDown);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutsideInteraction);
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", handleOutsideInteraction);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
 
   return (
-    <footer className="border-t border-slate-800 bg-slate-950/60">
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-2.5 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:gap-3 sm:px-6 lg:px-8">
+    <footer className="relative z-20 border-t border-slate-800 bg-slate-950/90">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-2.5 px-4 py-5 text-sm text-slate-500 sm:flex-row sm:gap-3 sm:px-6 lg:px-8">
         <span>Made by</span>
 
         <div className="relative" ref={ref}>
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen((previous) => !previous)}
             aria-haspopup="menu"
             aria-expanded={open}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 font-medium transition ${
+            aria-controls="footer-contact-menu"
+            className={`relative z-10 inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-full border px-4 py-2 font-medium transition ${
               open
                 ? "border-indigo-500/60 bg-slate-900 text-white"
                 : "border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-700 hover:text-white"
             }`}
           >
-            Majd Maroun
+            <User size={16} strokeWidth={1.8} />
+              Majd Maroun
             <ChevronUp
               size={15}
-              className={`transition-transform duration-200 ${open ? "" : "rotate-180"}`}
+              className={`transition-transform duration-200 ${
+                open ? "" : "rotate-180"
+              }`}
             />
           </button>
 
-          {/* Opens upward, because the footer sits at the bottom of the page */}
           {open && (
             <div
+              id="footer-contact-menu"
               role="menu"
-              className="absolute bottom-full left-1/2 z-50 mb-3 w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/50"
+              className="absolute bottom-full left-1/2 z-[100] mb-3 w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-2xl border border-slate-800 bg-slate-950 p-2 shadow-2xl shadow-black/50"
+              style={{
+                maxHeight: "min(70dvh, 420px)",
+                WebkitOverflowScrolling: "touch",
+              }}
             >
               <p className="px-3 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 Get in touch
               </p>
 
-              {CONTACTS.map((c) => (
+              {CONTACTS.map((contact) => (
                 <a
-                  key={c.key}
+                  key={contact.key}
                   role="menuitem"
-                  href={c.href}
+                  href={contact.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-900"
+                  className="group flex min-h-12 touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-900 active:bg-slate-800"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-slate-300 ring-1 ring-slate-800 transition group-hover:ring-slate-700">
                     <BrandIcon
-                      name={c.key}
-                      className={`h-[18px] w-[18px] transition ${c.hover}`}
+                      name={contact.key}
+                      className={`h-[18px] w-[18px] transition ${contact.hover}`}
                     />
                   </span>
 
                   <span className="min-w-0 text-left">
-                    <span className="block text-sm font-medium text-white">{c.label}</span>
-                    <span className="block truncate text-xs text-slate-500">{c.sub}</span>
+                    <span className="block text-sm font-medium text-white">
+                      {contact.label}
+                    </span>
+                    <span className="block truncate text-xs text-slate-500">
+                      {contact.sub}
+                    </span>
                   </span>
                 </a>
               ))}

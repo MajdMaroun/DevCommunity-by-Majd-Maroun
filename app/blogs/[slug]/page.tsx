@@ -198,11 +198,6 @@ export default async function BlogPostPage({
                     {formatDate(post.createdAt)}
                   </span>
 
-                  <span className="flex items-center gap-1.5">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    {readMinutes} min read
-                  </span>
-
                   {"editedAt" in post &&
                     typeof post.editedAt === "string" && (
                       <span
@@ -244,12 +239,12 @@ export default async function BlogPostPage({
                 </div>
               )}
 
-              <div className="mx-auto mt-8 max-w-3xl whitespace-pre-wrap text-[15px] leading-8 text-slate-300 sm:text-base">
+              <div className="mx-auto mt-3 max-w-3xl whitespace-pre-wrap text-[15px] leading-8 text-slate-300 sm:text-base">
                 {post.content}
               </div>
 
               {post.published && (
-                <div className="mx-auto max-w-3xl pt-6">
+                <div className="mx-auto max-w-3xl">
                   <LikeButton
                     postId={post._id}
                     initialLiked={like.liked}

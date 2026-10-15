@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ImageOff, X } from "lucide-react";
 import BookmarkButton from "@/components/BookmarkButton";
 import { getPublishedPosts } from "@/lib/queries/post";
 
@@ -111,7 +111,11 @@ export default async function BlogsPage({
                       className="block aspect-[2/1] w-full object-cover"
                     />
                   ) : (
-                    <div className="aspect-[2/1] w-full bg-gradient-to-br from-slate-800 to-slate-900" />
+                    // Posts without a cover show a "no image" icon instead of a blank box
+                    <div className="flex aspect-[2/1] w-full flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-slate-800 to-slate-900 text-slate-600">
+                      <ImageOff className="h-8 w-8" aria-hidden="true" />
+                      <span className="text-[11px] font-medium">No cover image</span>
+                    </div>
                   )}
                 </Link>
 
