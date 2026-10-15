@@ -13,11 +13,15 @@ export default function BookmarkButton({ post }: { post: BookmarkedPost }) {
       aria-label={active ? "Remove bookmark" : "Bookmark"}
       aria-pressed={active}
       onClick={() => toggle(post)}
-      className={`hidden p-2 sm:block ${
-        active ? "text-blue-400" : "text-slate-400 hover:text-white"
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition ${
+        active
+          ? "text-blue-400"
+          : "text-slate-400 hover:bg-slate-800 hover:text-white"
       }`}
     >
-      <Bookmark className={`h-4 w-4 ${active ? "fill-current" : ""}`} />
+      <Bookmark
+        className={`h-5 w-5 ${active ? "fill-current" : ""}`}
+      />
     </button>
   );
 }

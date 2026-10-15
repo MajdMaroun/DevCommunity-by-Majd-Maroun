@@ -13,7 +13,7 @@ export default async function VerifyPage({
   if (!email) redirect("/login");
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md items-center px-6 py-12 text-white">
+    <main>
       <div className="w-full rounded-2xl border border-slate-800 bg-[#0f1629] p-8 shadow-2xl shadow-black/30">
         <h1 className="text-2xl font-bold">Verify your email</h1>
         <p className="mb-6 mt-2 text-sm leading-6 text-slate-400">

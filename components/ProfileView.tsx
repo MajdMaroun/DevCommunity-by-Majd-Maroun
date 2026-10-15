@@ -1,6 +1,7 @@
 import Link from "next/link";
 import FollowButton from "./FollowButton";
 import PostActions from "./PostActions";
+import { Pencil } from "lucide-react";
 
 export type ProfilePost = {
   _id: string;
@@ -59,49 +60,61 @@ export default function ProfileView({
   return (
     <div className="mx-auto max-w-3xl px-6 py-10 text-white">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {/* Profile image */}
-          {user.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.image}
-              alt={user.name}
-              referrerPolicy="no-referrer"
-              className="h-20 w-20 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold">
-              {initials}
-            </div>
-          )}
-
-          {/* Name + title + username */}
-          <div>
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-
-            <p className="text-sm text-gray-400">{user.title || "Developer"}</p>
-
-            {handle && <p className="text-sm text-gray-500">@{handle}</p>}
-          </div>
-        </div>
-
-        {/* Profile action */}
-        {isOwnProfile ? (
-          <Link
-            href="/settings"
-            className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
-          >
-            Edit profile
-          </Link>
-        ) : (
-          <FollowButton
-            userId={user._id}
-            initialFollowing={relationship?.iFollow ?? false}
-            followedBy={relationship?.followedBy ?? false}
-          />
-        )}
+<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+  {/* Profile information */}
+  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+    {/* Profile image */}
+    {user.image ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={user.image}
+        alt={user.name}
+        referrerPolicy="no-referrer"
+        className="h-16 w-16 shrink-0 rounded-full object-cover sm:h-20 sm:w-20"
+      />
+    ) : (
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-xl font-semibold sm:h-20 sm:w-20 sm:text-2xl">
+        {initials}
       </div>
+    )}
+
+    {/* Name, title, and username */}
+    <div className="min-w-0 flex-1">
+      <h1 className="break-words text-xl font-bold sm:text-2xl">
+        {user.name}
+      </h1>
+
+      <p className="mt-1 break-words text-sm text-gray-400">
+        {user.title || "Developer"}
+      </p>
+
+      {handle && (
+        <p className="mt-0.5 break-all text-sm text-gray-500">
+          @{handle}
+        </p>
+      )}
+    </div>
+  </div>
+
+  {/* Profile action */}
+  <div className="flex shrink-0 sm:pt-1">
+    {isOwnProfile ? (
+      <Link
+  href="/settings"
+  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 transition hover:bg-gray-800"
+>
+  <Pencil size={15} />
+  Edit profile
+</Link>
+    ) : (
+      <FollowButton
+        userId={user._id}
+        initialFollowing={relationship?.iFollow ?? false}
+        followedBy={relationship?.followedBy ?? false}
+      />
+    )}
+  </div>
+</div>
 
       {/* Bio */}
       {user.bio && <p className="mt-6 text-gray-300">{user.bio}</p>}

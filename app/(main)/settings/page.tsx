@@ -10,7 +10,7 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-10 text-white">
+    <div>
       <h1 className="text-2xl font-bold">Settings</h1>
       <p className="mb-8 mt-1 text-sm text-slate-400">
         Update how you appear to other developers.

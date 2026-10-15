@@ -605,8 +605,7 @@ export default function Topbar({
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-full mt-3 w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl shadow-black/50">
-              {/* Dropdown header */}
+           <div className="fixed left-3 right-3 top-[72px] z-50 overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl shadow-black/50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[380px] sm:max-w-[calc(100vw-2rem)]">              {/* Dropdown header */}
               <div className="flex items-center justify-between border-b border-gray-800 px-4 py-4">
                 <div>
                   <h3 className="text-sm font-semibold text-white">
@@ -809,15 +808,6 @@ export default function Topbar({
                 role="menu"
                 className="absolute right-0 top-full mt-3 w-52 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 py-1.5 text-sm shadow-2xl"
               >
-                <div className="border-b border-gray-800 px-4 py-3">
-                  <p className="truncate font-medium text-white">
-                    {display.name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    Your account
-                  </p>
-                </div>
-
                 <button
                   type="button"
                   role="menuitem"
