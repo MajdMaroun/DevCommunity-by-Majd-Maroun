@@ -14,7 +14,7 @@ import {
   getFeaturedCommunities,
   getMyCommunities,
   getProfile,
-} from "@/app/(main)/home/page";
+} from "@/lib/queries/home";
 
 // getLatestBlogs now comes from here, because this version returns the cover image
 import { getTrendingTopics, getLatestBlogs } from "@/lib/queries/post";

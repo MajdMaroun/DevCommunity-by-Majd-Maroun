@@ -1,6 +1,6 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import Blog from "../lib/models/blogs";
+import Blog from "../lib/models/Blogs";
 
 const blogs = [
   {

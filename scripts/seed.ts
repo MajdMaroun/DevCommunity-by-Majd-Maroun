@@ -2,7 +2,7 @@ import { connectToDatabase } from "../lib/mongodb";
 import User from "../lib/models/User";
 import Community from "../lib/models/Community";
 import Post from "../lib/models/Post";
-import Blog from "../lib/models/blogs";
+import Blog from "../lib/models/Blogs";
 
 async function seed() {
   await connectToDatabase();
