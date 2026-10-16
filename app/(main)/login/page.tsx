@@ -56,10 +56,19 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocial = (provider: "google" | "github") => {
-    setSocialLoading(provider);
-    signIn(provider, { callbackUrl: "/" });
-  };
+  const handleSocial = async (provider: "google" | "github") => {
+  setSocialLoading(provider);
+
+  try {
+    await signIn(provider, {
+      redirectTo: "/",
+    });
+  } catch (error) {
+    console.error(`${provider} sign-in failed:`, error);
+    setSocialLoading(null);
+    setError(`Unable to sign in with ${provider}. Please try again.`);
+  }
+};
 
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-gray-950">
