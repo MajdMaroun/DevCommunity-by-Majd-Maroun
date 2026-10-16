@@ -35,8 +35,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-gray-950 text-white">
+    <html
+      lang="en"
+      className="dark"
+      style={{ colorScheme: "dark", backgroundColor: "#030712" }}
+    >
+      {/* Inline styles beat any rule in globals.css, so the site is dark in light mode too */}
+      <body
+        className="bg-gray-950 text-white"
+        style={{ backgroundColor: "#030712", color: "#ffffff" }}
+      >
         <Providers>
           <div className="flex min-h-screen pb-20 md:pb-0">
             <Sidebar />
