@@ -16,18 +16,10 @@ export const metadata: Metadata = {
     description: "Connect with developers, explore communities, and share knowledge.",
     url: "https://dev-community-by-majd-maroun.vercel.app",
     siteName: "DevCommunity",
-    images: [
-      {
-        url: "/opengraph-image.png",
-        width: 1200,
-        height: 630,
-        alt: "DevCommunity",
-      },
-    ],
+    images:["/opengraph-image.png"],
     type: "website",
   },
 };
-
 export default function RootLayout({
   children,
 }: {
