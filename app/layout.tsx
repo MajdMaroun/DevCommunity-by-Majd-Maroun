@@ -10,16 +10,18 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   metadataBase: new URL("https://dev-community-by-majd-maroun.vercel.app"),
   title: "DevCommunity",
-  description: "Connect with developers, explore communities, and share knowledge.",
+  description:
+    "Connect with developers, explore communities, and share knowledge.",
   openGraph: {
     title: "DevCommunity",
-    description: "Connect with developers, explore communities, and share knowledge.",
+    description:
+      "Connect with developers, explore communities, and share knowledge.",
     url: "https://dev-community-by-majd-maroun.vercel.app",
     siteName: "DevCommunity",
-    images:["/opengraph-image.png"],
     type: "website",
   },
 };
+
 export default function RootLayout({
   children,
 }: {
