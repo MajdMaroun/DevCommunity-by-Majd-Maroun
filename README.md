@@ -1,1 +1,0 @@
-# techtalks-capstone-majd-maroun
