@@ -7,31 +7,107 @@ import bcrypt from "bcryptjs";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongoClient";
 
+async function generateUniqueUsername(
+  name,
+  email
+) {
+  const client = await clientPromise;
+  const users = client.db().collection("users");
+
+  const base =
+    (name || email?.split("@")[0] || "developer")
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "")
+      .slice(0, 15) || "developer";
+
+  // Add a random suffix to reduce username collisions.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const suffix = Math.random().toString(36).slice(2, 7);
+    const username = `${base}_${suffix}`;
+
+    if (!(await users.findOne({ username }))) {
+      return username;
+    }
+  }
+
+  // Fallback if generated candidates are already taken.
+  let counter = 1;
+
+  while (true) {
+    const username = `${base}_${counter}`;
+
+    if (!(await users.findOne({ username }))) {
+      return username;
+    }
+
+    counter++;
+  }
+}
+
+const mongoAdapter = MongoDBAdapter(clientPromise);
+
+const adapter = {
+  ...mongoAdapter,
+
+  async createUser(user) {
+    const username = await generateUniqueUsername(user.name, user.email);
+
+    // Let the original adapter handle insertion and returned user data.
+    // The extra username field is passed at runtime to MongoDBAdapter.
+    return mongoAdapter.createUser({
+      ...user,
+      username,
+    });
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: MongoDBAdapter(clientPromise),
+  adapter,
   session: { strategy: "jwt" },
   trustHost: true,
-  pages: { signIn: "/login", error: "/login" },
+
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
 
   providers: [
-    Google({ allowDangerousEmailAccountLinking: true }),
-    GitHub({ allowDangerousEmailAccountLinking: true }),
+    Google({
+      allowDangerousEmailAccountLinking: true,
+    }),
+
+    GitHub({
+      allowDangerousEmailAccountLinking: true,
+    }),
 
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials) {
-        const email = String(credentials?.email ?? "").trim().toLowerCase();
+        const email = String(credentials?.email ?? "")
+          .trim()
+          .toLowerCase();
+
         const password = String(credentials?.password ?? "");
+
         if (!email || !password) return null;
 
         const client = await clientPromise;
-        const user = await client.db().collection("users").findOne({ email });
-        if (!user || typeof user.password !== "string") return null;
+
+        const user = await client
+          .db()
+          .collection("users")
+          .findOne({ email });
+
+        if (!user || typeof user.password !== "string") {
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, user.password);
+
         if (!valid) return null;
 
         return {
@@ -46,18 +122,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
-    // Runs on every social login: save THIS user's provider photo
     async signIn({ user, account, profile }) {
       if (account && account.provider !== "credentials") {
         const picture = profile?.picture ?? profile?.avatar_url;
+
         if (picture && user?.email) {
           const client = await clientPromise;
+
           await client
             .db()
             .collection("users")
-            .updateOne({ email: user.email }, { $set: { image: picture } });
+            .updateOne(
+              { email: user.email.toLowerCase() },
+              { $set: { image: picture } }
+            );
         }
       }
+
       return true;
     },
 
@@ -67,24 +148,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.username = user.username ?? null;
       }
 
-      // Social login: take the photo straight from the provider
       if (account && account.provider !== "credentials") {
         token.picture =
-          profile?.picture ?? profile?.avatar_url ?? user?.image ?? token.picture;
+          profile?.picture ??
+          profile?.avatar_url ??
+          user?.image ??
+          token.picture;
       }
 
-      // Any user whose token has no photo yet: load it from their DB record
-      if (token.id && !token.picture) {
+      if (token.id && (!token.picture || !token.username)) {
         try {
           const client = await clientPromise;
+
           const dbUser = await client
             .db()
             .collection("users")
             .findOne({ _id: new ObjectId(token.id) });
+
           if (dbUser?.image) token.picture = dbUser.image;
           if (dbUser?.username) token.username = dbUser.username;
         } catch {
-          /* invalid id: ignore */
+          // Ignore invalid IDs.
         }
       }
 
@@ -92,6 +176,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (session.name) token.name = session.name;
         if (session.username) token.username = session.username;
       }
+
       return token;
     },
 
@@ -102,6 +187,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.name ?? session.user.name;
         session.user.image = token.picture ?? session.user.image;
       }
+
       return session;
     },
   },
