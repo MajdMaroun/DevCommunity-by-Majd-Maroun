@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dev-community-by-majd-maroun.vercel.app"),
@@ -22,13 +22,20 @@ export const metadata: Metadata = {
   },
 };
 
+// Dark only: dark scrollbars and form controls, and a dark address bar on phones.
+// (Next.js keeps colorScheme and themeColor in `viewport`, not in `metadata`.)
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: "#030712",
+};
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className="bg-gray-950 text-white">
         <Providers>
           <div className="flex min-h-screen pb-20 md:pb-0">
