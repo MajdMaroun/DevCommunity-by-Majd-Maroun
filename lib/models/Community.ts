@@ -44,7 +44,7 @@ const CommunitySchema = new Schema<ICommunity>(
       index: true,
     },
 
-    // Users who joined. toggleMembership adds/removes ids here.
+    // Supports queries that find communities containing a specific user.
     members: {
       type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       default: [],
@@ -56,14 +56,21 @@ const CommunitySchema = new Schema<ICommunity>(
       ref: "User",
       required: true,
     },
-    
-    cover: { type: String },
+
+    cover: {
+      type: String,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// Supports membership queries that also sort communities by name.
+// Confirm this index benefits your actual query workload before keeping it.
+CommunitySchema.index({ members: 1, name: 1 });
+
+// Reuse the model during Next.js development hot reloads.
 const Community: Model<ICommunity> =
   mongoose.models.Community ||
   mongoose.model<ICommunity>("Community", CommunitySchema);

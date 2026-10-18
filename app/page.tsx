@@ -1,4 +1,11 @@
+// app/page.tsx  (Partial Prerendering version)
+//
+// The hero, headings and layout are the static shell, sent instantly.
+// Latest Blogs and Trending Topics are public, so they are cached ("use cache").
+// Featured communities, the profile card and My Communities are personal, so they stream in.
+import { Suspense } from "react";
 import Link from "next/link";
+import { cacheLife, cacheTag } from "next/cache";
 import BookmarkButton from "@/components/BookmarkButton";
 import {
   ArrowRight,
@@ -9,18 +16,15 @@ import {
   Users,
 } from "lucide-react";
 import JoinButton from "@/components/JoinButton";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import {
-  getFeaturedCommunities,
+  getFeaturedCommunitiesPublic,
+  getJoinedCommunityIds,
   getMyCommunities,
   getProfile,
 } from "@/lib/queries/home";
-
-// getLatestBlogs now comes from here, because this version returns the cover image
 import { getTrendingTopics, getLatestBlogs } from "@/lib/queries/post";
 import { getFollowerCount } from "@/lib/queries/follow";
-
-export const dynamic = "force-dynamic"; // trending change often
 
 /* ---------- helpers ---------- */
 
@@ -120,22 +124,121 @@ function SectionHeader({ title, href }: { title: string; href: string }) {
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
 const chip = "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300";
 
-/* ---------- page ---------- */
+/* ---------- loading skeletons (part of the instant shell) ---------- */
 
-export default async function Home() {
-  const session = await auth();
+function Pulse({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded-lg bg-slate-800 ${className}`} />;
+}
+
+function FeaturedSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6" aria-busy="true">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className={`${card} space-y-3 p-4`}>
+          <Pulse className="h-11 w-11" />
+          <Pulse className="h-4 w-24" />
+          <Pulse className="h-8 w-full" />
+          <Pulse className="h-9 w-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BlogsSkeleton() {
+  return (
+    <div className={`${card} divide-y divide-slate-800`} aria-busy="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4">
+          <Pulse className="aspect-[16/9] w-full sm:aspect-auto sm:h-[74px] sm:w-[132px]" />
+          <div className="flex-1 space-y-2">
+            <Pulse className="h-4 w-2/3" />
+            <Pulse className="h-3 w-full" />
+            <Pulse className="h-3 w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SideCardSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className={`${card} space-y-3 p-5`} aria-busy="true">
+      <Pulse className="h-5 w-32" />
+      {Array.from({ length: rows }).map((_, i) => (
+        <Pulse key={i} className="h-10 w-full" />
+      ))}
+    </div>
+  );
+}
+
+/* ---------- sections that stream in (personal data) ---------- */
+
+async function FeaturedCommunitiesList() {
+  const session = await getSession();
   const userId = session?.user?.id ?? null;
-  const signedIn = !!userId;
 
-  const [featured, myCommunities, blogs, dbProfile, trending, followerCount] =
-    await Promise.all([
-      getFeaturedCommunities(userId),
-      getMyCommunities(userId),
-      getLatestBlogs(),
-      getProfile(userId),
-      getTrendingTopics(),
-      getFollowerCount(userId), // real count from the Follow records
-    ]);
+  // The list itself is cached. Only "did I join it?" is looked up per visitor.
+  const featured = await getFeaturedCommunitiesPublic();
+  const joinedIds = new Set(
+    await getJoinedCommunityIds(userId, featured.map((c) => c.id))
+  );
+
+  if (featured.length === 0) {
+    return (
+      <p className={`${card} p-6 text-sm text-slate-400`}>
+        No communities yet. Be the first to{" "}
+        <Link href="/communities/create" className="text-blue-400 hover:text-blue-300">
+          create one
+        </Link>
+        .
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
+      {featured.map((c) => (
+        <div key={c.id} className={`${card} flex flex-col p-4`}>
+          <Link href={`/communities/${c.slug}`} className="block">
+            <Logo name={c.name} src={c.logo} className="h-11 w-11 text-lg" />
+            <h3 className="mt-3 text-sm font-semibold text-white">{c.name}</h3>
+            <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs text-slate-400">
+              {c.description}
+            </p>
+          </Link>
+
+          <div className="mt-3 flex flex-wrap gap-1">
+            {c.topics.slice(0, 2).map((t) => (
+              <span key={t} className={chip}>
+                #{t}
+              </span>
+            ))}
+          </div>
+
+          {/* footer: always pinned to the bottom of the card */}
+          <div className="mt-auto pt-3">
+            <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
+              <Users className="h-3.5 w-3.5" />
+              {formatCount(c.memberCount)} {c.memberCount === 1 ? "member" : "members"}
+            </p>
+            <JoinButton communityId={c.id} joined={joinedIds.has(c.id)} signedIn={!!userId} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function ProfileCard() {
+  const session = await getSession();
+  const userId = session?.user?.id ?? null;
+
+  const [dbProfile, followerCount] = await Promise.all([
+    getProfile(userId),
+    getFollowerCount(userId), // real count from the Follow records
+  ]);
 
   // Replace the Followers stat with the live count, whatever getProfile returned
   const withLiveFollowers = (stats: { label: string; value: string | number }[]) =>
@@ -156,7 +259,6 @@ export default async function Home() {
           name: session.user.name ?? session.user.email ?? "User",
           image: session.user.image ?? undefined,
           title: "Developer",
-          headline: session.user.email ?? "",
           bio: "",
           location: "",
           joined: "",
@@ -165,11 +267,257 @@ export default async function Home() {
         }
       : null;
 
+  if (!profile) {
+    return (
+      <section className={`${card} p-5`}>
+        <h2 className="font-semibold text-white">Join DevCommunity</h2>
+        <p className="mt-1 text-xs text-slate-400">
+          Sign in to join communities, bookmark blogs and publish your own posts.
+        </p>
+        <Link
+          href="/login"
+          className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+        >
+          Sign in
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className={`${card} p-5`}>
+      <div className="flex items-center gap-3">
+        <Avatar
+          src={profile.image}
+          name={profile.name}
+          className="h-14 w-14"
+          textClass="text-xl"
+        />
+        <div className="min-w-0">
+          <h2 className="truncate font-semibold text-white">{profile.name}</h2>
+          <p className="truncate text-xs text-slate-400">{profile.title || "Developer"}</p>
+        </div>
+      </div>
+
+      {profile.bio && (
+        <p className="mt-4 text-xs leading-relaxed text-slate-300">{profile.bio}</p>
+      )}
+
+      {(profile.location || profile.joined) && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          {profile.location && (
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" /> {profile.location}
+            </span>
+          )}
+          {profile.joined && (
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5" /> Joined {profile.joined}
+            </span>
+          )}
+        </div>
+      )}
+
+      {profile.stats.length > 0 && (
+        <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
+          {profile.stats.map((s) => (
+            <div key={s.label}>
+              <p className="text-lg font-bold text-white">{s.value}</p>
+              <p className="text-[11px] text-slate-400">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {profile.skills.length > 0 && (
+        <div className="mt-4 border-t border-slate-800 pt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-white">Skills</h3>
+            <Link href="/settings" className="text-xs text-blue-400 hover:text-blue-300">
+              Edit
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.map((s) => (
+              <span
+                key={s}
+                className="rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Link
+        href="/profile"
+        className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 hover:bg-slate-800"
+      >
+        View profile
+      </Link>
+    </section>
+  );
+}
+
+async function MyCommunitiesCard() {
+  const session = await getSession();
+  const userId = session?.user?.id ?? null;
+  if (!userId) return null; // signed-out visitors do not see this card
+
+  const myCommunities = await getMyCommunities(userId);
+
+  return (
+    <section className={`${card} p-4`}>
+      <SectionHeader title="My Communities" href="/communities" />
+      {myCommunities.length === 0 ? (
+        <p className="text-xs text-slate-400">You haven&apos;t joined any communities yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {myCommunities.map((c) => (
+            <li key={c.id} className="flex items-center gap-3">
+              <Logo name={c.name} src={c.logo} className="h-9 w-9 text-sm" />
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/communities/${c.slug}`}
+                  className="block truncate text-sm font-medium text-white hover:text-blue-300"
+                >
+                  {c.name}
+                </Link>
+                <p className="text-[11px] text-slate-400">
+                  {formatCount(c.memberCount)} {c.memberCount === 1 ? "member" : "members"}
+                </p>
+              </div>
+              <JoinButton communityId={c.id} joined signedIn compact />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/* ---------- sections that are the same for everyone (cached) ---------- */
+
+async function LatestBlogsList() {
+  "use cache";
+  cacheLife("minutes"); // refreshes about every minute
+  cacheTag("posts"); // or immediately when a post is published, edited or deleted
+
+  const blogs = await getLatestBlogs();
+
+  if (blogs.length === 0) {
+    return <p className={`${card} p-6 text-sm text-slate-400`}>No posts yet.</p>;
+  }
+
+  return (
+    <div className={`${card} divide-y divide-slate-800`}>
+      {blogs.map((b) => (
+        // Phones: a stacked card. From the "sm" breakpoint up: one compact row.
+        <article key={b.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4">
+          <Link href={`/blogs/${b.slug}`} className="block shrink-0 sm:w-[132px]">
+            {b.cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={b.cover}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="aspect-[16/9] w-full rounded-lg object-cover sm:aspect-auto sm:h-[74px]"
+              />
+            ) : (
+              <div className="aspect-[16/9] w-full rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 sm:aspect-auto sm:h-[74px]" />
+            )}
+          </Link>
+
+          <div className="min-w-0 flex-1">
+            <Link href={`/blogs/${b.slug}`}>
+              <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-white hover:text-blue-300 sm:line-clamp-1">
+                {b.title}
+              </h3>
+            </Link>
+
+            <p className="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-400">
+              {b.excerpt}
+            </p>
+
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-400">
+              <Avatar
+                src={b.authorImage}
+                name={b.authorName}
+                className="h-5 w-5"
+                textClass="text-[8px]"
+              />
+              <span className="max-w-[10rem] truncate">{b.authorName}</span>
+              <span aria-hidden="true">·</span>
+              <span>{b.date}</span>
+              {b.topic && (
+                <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-blue-300">
+                  {b.topic}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
+            <Link
+              href={`/blogs/${b.slug}`}
+              className="order-1 flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-center text-xs font-medium text-slate-200 transition hover:bg-slate-800 sm:order-2 sm:flex-none sm:py-2"
+            >
+              Read Blog
+            </Link>
+
+            <div className="order-2 sm:order-1">
+              <BookmarkButton post={{ id: b.id, title: b.title, href: `/blogs/${b.slug}` }} />
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+async function TrendingList() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("posts");
+
+  const trending = await getTrendingTopics();
+
+  if (trending.length === 0) {
+    return <p className="text-xs text-slate-400">Topics will appear as people post.</p>;
+  }
+
+  return (
+    <ol className="space-y-1">
+      {trending.map((t, i) => (
+        <li key={t.topic}>
+          <Link
+            href={`/blogs?topic=${encodeURIComponent(t.topic)}`}
+            className="flex items-center gap-3 rounded-md px-1 py-2 text-sm hover:bg-slate-800/50"
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-800 text-[11px] text-slate-300">
+              {i + 1}
+            </span>
+            <span className="flex-1 text-slate-200">{t.topic}</span>
+            <span className="text-xs text-slate-400">
+              {formatCount(t.posts)} {t.posts === 1 ? "post" : "posts"}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/* ---------- page ---------- */
+
+export default function Home() {
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       {/* ================= CENTER ================= */}
       <div className="min-w-0 space-y-6">
-        {/* Hero */}
+        {/* Hero: pure static shell, no data */}
         <section
           className={`${card} relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-5 py-6 sm:px-8 sm:py-8`}
         >
@@ -200,256 +548,31 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Featured Communities */}
         <section>
           <SectionHeader title="Featured Communities" href="/communities" />
-          {featured.length === 0 ? (
-            <p className={`${card} p-6 text-sm text-slate-400`}>
-              No communities yet. Be the first to{" "}
-              <Link href="/communities/create" className="text-blue-400 hover:text-blue-300">
-                create one
-              </Link>
-              .
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
-              {featured.map((c) => (
-                <div key={c.id} className={`${card} flex flex-col p-4`}>
-                  <Link href={`/communities/${c.slug}`} className="block">
-                    <Logo name={c.name} src={c.logo} className="h-11 w-11 text-lg" />
-                    <h3 className="mt-3 text-sm font-semibold text-white">{c.name}</h3>
-                    <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs text-slate-400">
-                      {c.description}
-                    </p>
-                  </Link>
-
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {c.topics.slice(0, 2).map((t) => (
-                      <span key={t} className={chip}>
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* footer: always pinned to the bottom of the card */}
-                  <div className="mt-auto pt-3">
-                    <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
-                      <Users className="h-3.5 w-3.5" />
-                      {formatCount(c.memberCount)} {c.memberCount === 1 ? "member" : "members"}
-                    </p>
-                    <JoinButton communityId={c.id} joined={c.joined} signedIn={signedIn} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <Suspense fallback={<FeaturedSkeleton />}>
+            <FeaturedCommunitiesList />
+          </Suspense>
         </section>
 
-        {/* Latest Blogs */}
         <section>
           <SectionHeader title="Latest Blogs" href="/blogs" />
-          {blogs.length === 0 ? (
-            <p className={`${card} p-6 text-sm text-slate-400`}>No posts yet.</p>
-          ) : (
-            <div className={`${card} divide-y divide-slate-800`}>
-              {blogs.map((b) => (
-                // Phones: a stacked card (big cover, text, then buttons).
-                // From the "sm" breakpoint up: one compact row, as before.
-                <article
-                  key={b.id}
-                  className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4"
-                >
-                  {/* Cover */}
-                  <Link href={`/blogs/${b.slug}`} className="block shrink-0 sm:w-[132px]">
-                    {b.cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={b.cover}
-                        alt=""
-                        className="aspect-[16/9] w-full rounded-lg object-cover sm:aspect-auto sm:h-[74px]"
-                      />
-                    ) : (
-                      <div className="aspect-[16/9] w-full rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 sm:aspect-auto sm:h-[74px]" />
-                    )}
-                  </Link>
-
-                  {/* Text */}
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/blogs/${b.slug}`}>
-                      <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-white hover:text-blue-300 sm:line-clamp-1">
-                        {b.title}
-                      </h3>
-                    </Link>
-
-                    <p className="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-400">
-                      {b.excerpt}
-                    </p>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-400">
-                      <Avatar
-                        src={b.authorImage}
-                        name={b.authorName}
-                        className="h-5 w-5"
-                        textClass="text-[8px]"
-                      />
-                      <span className="max-w-[10rem] truncate">{b.authorName}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{b.date}</span>
-                      {b.topic && (
-                        <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-blue-300">
-                          {b.topic}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions: on phones "Read blog" is a wide button with the bookmark beside it */}
-                  <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
-                    <Link
-                      href={`/blogs/${b.slug}`}
-                      className="order-1 flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-center text-xs font-medium text-slate-200 transition hover:bg-slate-800 sm:order-2 sm:flex-none sm:py-2"
-                    >
-                      Read Blog
-                    </Link>
-
-                    <div className="order-2 sm:order-1">
-                      <BookmarkButton
-                        post={{ id: b.id, title: b.title, href: `/blogs/${b.slug}` }}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+          <Suspense fallback={<BlogsSkeleton />}>
+            <LatestBlogsList />
+          </Suspense>
         </section>
       </div>
 
       {/* ================= RIGHT ================= */}
       <aside className="space-y-4">
-        {/* Profile (or sign-in prompt) */}
-        {profile ? (
-          <section className={`${card} p-5`}>
-            <div className="flex items-center gap-3">
-              <Avatar
-                src={profile.image}
-                name={profile.name}
-                className="h-14 w-14"
-                textClass="text-xl"
-              />
-              <div className="min-w-0">
-                <h2 className="truncate font-semibold text-white">{profile.name}</h2>
-                <p className="truncate text-xs text-slate-400">{profile.title || "Developer"}</p>
-              </div>
-            </div>
+        <Suspense fallback={<SideCardSkeleton rows={4} />}>
+          <ProfileCard />
+        </Suspense>
 
-            {profile.bio && (
-              <p className="mt-4 text-xs leading-relaxed text-slate-300">{profile.bio}</p>
-            )}
+        <Suspense fallback={<SideCardSkeleton rows={3} />}>
+          <MyCommunitiesCard />
+        </Suspense>
 
-            {(profile.location || profile.joined) && (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-                {profile.location && (
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" /> {profile.location}
-                  </span>
-                )}
-                {profile.joined && (
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" /> Joined {profile.joined}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {profile.stats.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
-                {profile.stats.map((s) => (
-                  <div key={s.label}>
-                    <p className="text-lg font-bold text-white">{s.value}</p>
-                    <p className="text-[11px] text-slate-400">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {profile.skills.length > 0 && (
-              <div className="mt-4 border-t border-slate-800 pt-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">Skills</h3>
-                  <Link href="/settings" className="text-xs text-blue-400 hover:text-blue-300">
-                    Edit
-                  </Link>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((s) => (
-                    <span
-                      key={s}
-                      className="rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <Link
-              href="/profile"
-              className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 hover:bg-slate-800"
-            >
-              View profile
-            </Link>
-          </section>
-        ) : (
-          <section className={`${card} p-5`}>
-            <h2 className="font-semibold text-white">Join DevCommunity</h2>
-            <p className="mt-1 text-xs text-slate-400">
-              Sign in to join communities, bookmark blogs and publish your own posts.
-            </p>
-            <Link
-              href="/login"
-              className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"
-            >
-              Sign in
-            </Link>
-          </section>
-        )}
-
-        {/* My Communities */}
-        {signedIn && (
-          <section className={`${card} p-4`}>
-            <SectionHeader title="My Communities" href="/communities" />
-            {myCommunities.length === 0 ? (
-              <p className="text-xs text-slate-400">
-                You haven&apos;t joined any communities yet.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {myCommunities.map((c) => (
-                  <li key={c.id} className="flex items-center gap-3">
-                    <Logo name={c.name} src={c.logo} className="h-9 w-9 text-sm" />
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/communities/${c.slug}`}
-                        className="block truncate text-sm font-medium text-white hover:text-blue-300"
-                      >
-                        {c.name}
-                      </Link>
-                      <p className="text-[11px] text-slate-400">
-                        {formatCount(c.memberCount)}{" "}
-                        {c.memberCount === 1 ? "member" : "members"}
-                      </p>
-                    </div>
-                    <JoinButton communityId={c.id} joined signedIn compact />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
-
-        {/* Trending Topics */}
         <section className={`${card} p-4`}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-bold text-white">
@@ -462,28 +585,9 @@ export default async function Home() {
               View all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          {trending.length === 0 ? (
-            <p className="text-xs text-slate-400">Topics will appear as people post.</p>
-          ) : (
-            <ol className="space-y-1">
-              {trending.map((t, i) => (
-                <li key={t.topic}>
-                  <Link
-                    href={`/blogs?topic=${encodeURIComponent(t.topic)}`}
-                    className="flex items-center gap-3 rounded-md px-1 py-2 text-sm hover:bg-slate-800/50"
-                  >
-                    <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-800 text-[11px] text-slate-300">
-                      {i + 1}
-                    </span>
-                    <span className="flex-1 text-slate-200">{t.topic}</span>
-                    <span className="text-xs text-slate-400">
-                      {formatCount(t.posts)} {t.posts === 1 ? "post" : "posts"}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          )}
+          <Suspense fallback={<Pulse className="h-40 w-full" />}>
+            <TrendingList />
+          </Suspense>
         </section>
       </aside>
     </div>

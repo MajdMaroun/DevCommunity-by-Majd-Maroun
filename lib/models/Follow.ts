@@ -25,12 +25,16 @@ const FollowSchema = new Schema<IFollow>(
   }
 );
 
-// One user can follow another user only once
+// Prevent duplicate relationships and support queries by follower.
 FollowSchema.index(
   { follower: 1, following: 1 },
   { unique: true }
 );
 
+// Supports follower counts and finding everyone who follows a user.
+FollowSchema.index({ following: 1 });
+
+// Reuse the model during Next.js development hot reloads.
 const Follow: Model<IFollow> =
   mongoose.models.Follow ||
   mongoose.model<IFollow>("Follow", FollowSchema);

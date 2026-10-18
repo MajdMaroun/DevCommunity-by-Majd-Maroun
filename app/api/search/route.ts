@@ -4,8 +4,6 @@ import Community from "@/lib/models/Community";
 import Post from "@/lib/models/Post";
 import User from "@/lib/models/User";
 
-export const dynamic = "force-dynamic";
-
 // Treat the search text literally, so "c++" or "(" can't break the query
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

@@ -5,8 +5,6 @@ import User from "@/lib/models/User";
 import Follow from "@/lib/models/Follow";
 import { getRelationships } from "@/lib/queries/follow";
 
-export const dynamic = "force-dynamic";
-
 type Person = {
   _id: unknown;
   name: string;

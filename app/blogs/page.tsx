@@ -30,8 +30,6 @@ interface BlogPost {
   editedAt?: string | Date;
 }
 
-export const dynamic = "force-dynamic";
-
 /* same tokens as the home page */
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
 const chip = "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300";

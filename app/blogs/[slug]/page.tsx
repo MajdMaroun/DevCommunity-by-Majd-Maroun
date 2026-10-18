@@ -15,8 +15,6 @@ import { getLikeState } from "@/lib/queries/engagement";
 import { getPostBySlug } from "@/lib/queries/post";
 import { getCurrentUser } from "@/lib/queries/users";
 
-export const dynamic = "force-dynamic";
-
 function Avatar({
   src,
   name,

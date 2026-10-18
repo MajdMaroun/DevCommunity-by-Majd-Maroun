@@ -1,11 +1,15 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/queries/users";
 import { getCommunityOptions } from "@/lib/queries/post";
 import CreatePostForm from "@/components/CreatePostForm";
 
-export default async function CreatePage() {
+async function CreatePostContent() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+
+  if (!user) {
+    redirect("/login");
+  }
 
   const communities = await getCommunityOptions();
 
@@ -24,5 +28,21 @@ export default async function CreatePage() {
         <CreatePostForm communities={communities} />
       )}
     </div>
+  );
+}
+
+export default function CreatePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-2xl animate-pulse text-white">
+          <div className="h-8 w-48 rounded bg-gray-800" />
+          <div className="mt-3 h-4 w-64 rounded bg-gray-800" />
+          <div className="mt-8 h-40 rounded-xl bg-gray-900" />
+        </div>
+      }
+    >
+      <CreatePostContent />
+    </Suspense>
   );
 }

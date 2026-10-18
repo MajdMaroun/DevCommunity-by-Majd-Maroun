@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   CalendarDays,
   FileText,
+  ImageOff,
   PenSquare,
   Users,
 } from "lucide-react";
@@ -11,8 +13,6 @@ import JoinButton from "@/components/JoinButton";
 import { getCurrentUserId } from "@/lib/queries/auth";
 import { getCommunityBySlug } from "@/lib/queries/communities";
 import { getPostsByCommunity } from "@/lib/queries/post";
-
-export const dynamic = "force-dynamic";
 
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
 
@@ -42,7 +42,7 @@ function AuthorAvatar({
         src={src}
         alt=""
         referrerPolicy="no-referrer"
-        className="h-8 w-8 shrink-0 rounded-full object-cover"
+        className="h-7 w-7 shrink-0 rounded-full object-cover"
       />
     );
   }
@@ -56,7 +56,7 @@ function AuthorAvatar({
     .toUpperCase();
 
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-semibold text-white">
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-semibold text-white">
       {initials || "U"}
     </span>
   );
@@ -151,7 +151,7 @@ export default async function CommunityPage({
 
       <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="min-w-0">
-          <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div>
               <h2 className="text-xl font-bold text-white">Latest posts</h2>
               <p className="mt-1 text-xs text-slate-500">
@@ -197,79 +197,107 @@ export default async function CommunityPage({
               )}
             </div>
           ) : (
-            <div className={`${card} divide-y divide-slate-800`}>
+            <div className={`${card} divide-y divide-slate-800 overflow-hidden`}>
               {posts.map((post) => {
                 const authorName = post.author?.name ?? "Unknown author";
+                const href = `/blogs/${post.slug}`;
+                const cover = post.cover?.trim();
 
                 return (
+                  // Phones: cover on top, text below. From "sm" up: cover on the left, text on the right.
                   <article
                     key={post._id}
-                    className="p-5 transition hover:bg-slate-800/20 sm:p-6"
+                    className="group flex flex-col gap-4 p-4 transition hover:bg-slate-800/20 sm:flex-row sm:p-5"
                   >
-                    <Link href={`/blogs/${post.slug}`} className="group block">
-                      <h3 className="text-lg font-semibold leading-6 text-white transition group-hover:text-blue-300">
-                        {post.title}
-                      </h3>
-
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">
-                        {post.content}
-                      </p>
+                    {/* Cover (or a "no image" icon) */}
+                    <Link
+                      href={href}
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className="block shrink-0 overflow-hidden rounded-lg sm:w-44"
+                    >
+                      {cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={cover}
+                          alt=""
+                          className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:aspect-auto sm:h-full sm:min-h-[7.5rem]"
+                        />
+                      ) : (
+                        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-slate-800 to-slate-900 text-slate-600 sm:aspect-auto sm:h-full sm:min-h-[7.5rem]">
+                          <ImageOff className="h-7 w-7" aria-hidden="true" />
+                          <span className="text-[10px] font-medium">No cover image</span>
+                        </div>
+                      )}
                     </Link>
 
-                    {post.topics?.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {post.topics.slice(0, 3).map((topic) => (
-                          <Link
-                            key={topic}
-                            href={`/blogs?topic=${encodeURIComponent(topic)}`}
-                            className="rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300 transition hover:bg-slate-700"
-                          >
-                            #{topic}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                      {post.author && (
-                        <div className="flex items-center gap-2">
-                          <AuthorAvatar
-                            src={post.author.image}
-                            name={authorName}
-                          />
-
-                          {post.author.username ? (
+                    {/* Text */}
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      {post.topics?.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                          {post.topics.slice(0, 3).map((topic) => (
                             <Link
-                              href={`/profile/${post.author.username}`}
-                              className="font-medium text-slate-300 transition hover:text-white"
+                              key={topic}
+                              href={`/blogs?topic=${encodeURIComponent(topic)}`}
+                              className="rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300 transition hover:bg-slate-700"
                             >
-                              {authorName}
+                              #{topic}
                             </Link>
-                          ) : (
-                            <span className="font-medium text-slate-300">
-                              {authorName}
-                            </span>
-                          )}
+                          ))}
                         </div>
                       )}
 
-                      <span className="hidden text-slate-700 sm:inline">•</span>
-
-                      <span className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {new Date(post.createdAt).toLocaleDateString("en", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-
-                      <Link
-                        href={`/blogs/${post.slug}`}
-                        className="ml-auto font-semibold text-blue-400 transition hover:text-blue-300"
-                      >
-                        Read post
+                      <Link href={href} className="block">
+                        <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-white transition group-hover:text-blue-300 sm:text-lg">
+                          {post.title}
+                        </h3>
                       </Link>
+
+                      <p className="mt-1.5 line-clamp-2 break-words text-sm leading-6 text-slate-400">
+                        {post.content}
+                      </p>
+
+                      {/* Meta row: author and date on the left, "Read post" on the right.
+                          It wraps onto two lines on very narrow screens instead of squeezing. */}
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4 text-xs text-slate-500">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+                          {post.author && (
+                            <div className="flex min-w-0 items-center gap-2">
+                              <AuthorAvatar src={post.author.image} name={authorName} />
+
+                              {post.author.username ? (
+                                <Link
+                                  href={`/profile/${post.author.username}`}
+                                  className="max-w-[10rem] truncate font-medium text-slate-300 transition hover:text-white"
+                                >
+                                  {authorName}
+                                </Link>
+                              ) : (
+                                <span className="max-w-[10rem] truncate font-medium text-slate-300">
+                                  {authorName}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <span className="flex items-center gap-1.5">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            {new Date(post.createdAt).toLocaleDateString("en", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+
+                        <Link
+                          href={href}
+                          className="inline-flex items-center gap-1 font-semibold text-blue-400 transition hover:text-blue-300"
+                        >
+                          Read post
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                        </Link>
+                      </div>
                     </div>
                   </article>
                 );

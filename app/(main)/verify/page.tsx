@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import VerifyForm from "@/components/VerifyForm";
 
-export const dynamic = "force-dynamic";
 
 export default async function VerifyPage({
   searchParams,

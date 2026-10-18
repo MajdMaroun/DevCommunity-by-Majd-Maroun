@@ -4,8 +4,6 @@ import { getCurrentUser, getUserByUsername } from "@/lib/queries/users";
 import { getPostsByAuthor } from "@/lib/queries/post";
 import { getRelationship } from "@/lib/queries/follow";
 
-export const dynamic = "force-dynamic";
-
 export default async function PublicProfilePage({
 params,
 }: {

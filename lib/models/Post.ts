@@ -24,7 +24,7 @@ const PostSchema = new Schema<IPost>(
     slug: {
       type: String,
       required: true,
-      unique: true,
+      unique: true, // Also creates an index for looking up posts by slug.
       lowercase: true,
       trim: true,
     },
@@ -41,9 +41,13 @@ const PostSchema = new Schema<IPost>(
       index: true,
     },
 
-    cover: { type: String },
+    cover: {
+      type: String,
+    },
 
-    editedAt: { type: Date },
+    editedAt: {
+      type: Date,
+    },
 
     community: {
       type: Schema.Types.ObjectId,
@@ -69,9 +73,16 @@ const PostSchema = new Schema<IPost>(
   }
 );
 
+// Speeds up fetching recent posts within a specific community.
 PostSchema.index({ community: 1, createdAt: -1 });
+
+// Speeds up fetching an author's recent posts.
 PostSchema.index({ author: 1, createdAt: -1 });
 
+// Helps queries that filter published posts and sort them by creation date.
+PostSchema.index({ published: 1, createdAt: -1 });
+
+// Reuse the registered model during development hot reloads.
 const Post: Model<IPost> =
   mongoose.models.Post || mongoose.model<IPost>("Post", PostSchema);
 

@@ -4,8 +4,6 @@ import { connectToDatabase } from "@/lib/mongodb";
 import ImageModel from "@/lib/models/Image";
 import { getCurrentUserId } from "@/lib/queries/auth";
 
-export const dynamic = "force-dynamic";
-
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 2 * 1024 * 1024; // the browser shrinks images first, so this is a safety net
 

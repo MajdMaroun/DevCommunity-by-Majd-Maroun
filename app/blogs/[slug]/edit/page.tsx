@@ -5,8 +5,6 @@ import EditPostForm from "@/components/EditPostForm";
 import { getCurrentUserId } from "@/lib/queries/auth";
 import { getCommunityOptions, getPostForEdit } from "@/lib/queries/post";
 
-export const dynamic = "force-dynamic";
-
 export default async function EditPostPage({
   params,
 }: {

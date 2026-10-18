@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/queries/auth";
 import { getNotificationItems } from "@/lib/queries/notifications";
 
-export const dynamic = "force-dynamic";
-
 // The bell only shows unread notifications; `total` is the unread count for the badge
 export async function GET() {
   const userId = await getCurrentUserId();

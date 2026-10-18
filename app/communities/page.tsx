@@ -4,8 +4,6 @@ import CommunityCard from "@/components/CommunityCard";
 import { getAllCommunities } from "@/lib/queries/communities";
 import { ArrowRight, Users } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 export default async function CommunitiesPage() {
   const session = await auth();
   const userId = session?.user?.id ?? null;
