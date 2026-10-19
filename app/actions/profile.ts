@@ -13,7 +13,10 @@ export type ProfileFormState = {
   message: string;
 };
 
-const MAX_IMAGE_LENGTH = 150_000;
+// Maximum encoded image size: 500 KB.
+// The decoded image is also checked below.
+const MAX_IMAGE_LENGTH = 500_000;
+const MAX_IMAGE_BYTES = 375_000;
 
 export async function updateProfile(
   _prev: ProfileFormState,
@@ -63,6 +66,7 @@ export async function updateProfile(
   }
 
   const isUrl = /^https?:\/\/.+/i.test(image);
+
   const uploadMatch = image.match(
     /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/
   );
@@ -79,7 +83,7 @@ export async function updateProfile(
   if (isUpload && image.length > MAX_IMAGE_LENGTH) {
     return {
       ok: false,
-      message: "Image is too large. Try a smaller photo.",
+      message: "Image is too large. Please choose a smaller photo.",
     };
   }
 
@@ -100,17 +104,17 @@ export async function updateProfile(
       };
     }
 
-    // Keep existing Google/GitHub URLs unchanged.
+    // Preserve existing Google/GitHub URLs.
     // New uploads are stored in Supabase, not MongoDB.
     let imageToSave: string | null = image || null;
 
     if (uploadMatch) {
       const imageBuffer = Buffer.from(uploadMatch[1], "base64");
 
-      if (imageBuffer.length > 100_000) {
+      if (imageBuffer.length > MAX_IMAGE_BYTES) {
         return {
           ok: false,
-          message: "Image is too large. Try a smaller photo.",
+          message: "Image is too large. Please choose a smaller photo.",
         };
       }
 
@@ -136,7 +140,7 @@ export async function updateProfile(
       }
 
       imageToSave = supabaseAdmin.storage
-        .from("avatars")
+        .from("Avatars")
         .getPublicUrl(uploadedPath).data.publicUrl;
     }
 
@@ -156,8 +160,10 @@ export async function updateProfile(
     if (result.matchedCount === 0) {
       if (uploadedPath) {
         await supabaseAdmin.storage
-          .from("avatars")
+          .from("Avatars")
           .remove([uploadedPath]);
+
+        uploadedPath = null;
       }
 
       return {
@@ -170,7 +176,7 @@ export async function updateProfile(
     if (uploadedPath) {
       try {
         await supabaseAdmin.storage
-          .from("avatars")
+          .from("Avatars")
           .remove([uploadedPath]);
       } catch {
         // Preserve the original error.

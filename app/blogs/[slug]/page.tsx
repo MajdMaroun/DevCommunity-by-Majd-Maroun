@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
-  Clock3,
   Code2,
   Users,
 } from "lucide-react";
+
 import PostActions from "@/components/PostActions";
 import LikeButton from "@/components/LikeButton";
 import CommentSection from "@/components/CommentSection";
@@ -64,7 +65,7 @@ function formatDate(value: string | Date) {
   }).format(new Date(value));
 }
 
-export default async function BlogPostPage({
+async function BlogPostContent({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -72,16 +73,22 @@ export default async function BlogPostPage({
   const { slug } = await params;
 
   const post = await getPostBySlug(slug);
-  if (!post) notFound();
+
+  if (!post) {
+    notFound();
+  }
 
   const me = await getCurrentUser();
   const isAuthor = !!me && me._id === post.author?._id;
 
   // Drafts are only visible to their author.
-  if (!post.published && !isAuthor) notFound();
+  if (!post.published && !isAuthor) {
+    notFound();
+  }
 
   const author = post.author;
   const authorName = author?.name ?? "Unknown author";
+
   const like = await getLikeState(post._id, me?._id ?? null);
 
   const wordCount = post.content.trim().split(/\s+/).filter(Boolean).length;
@@ -129,24 +136,24 @@ export default async function BlogPostPage({
               )}
 
               <div className="flex items-start justify-between gap-4">
-  <h1
-    className={`min-w-0 flex-1 break-words text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl ${
-      !post.cover && post.community ? "mt-5" : ""
-    }`}
-  >
-    {post.title}
-  </h1>
+                <h1
+                  className={`min-w-0 flex-1 break-words text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl ${
+                    !post.cover && post.community ? "mt-5" : ""
+                  }`}
+                >
+                  {post.title}
+                </h1>
 
-  <div className="shrink-0">
-    <BookmarkButton
-      post={{
-        id: post._id,
-        title: post.title,
-        href: `/blogs/${post.slug}`,
-      }}
-    />
-  </div>
-</div>
+                <div className="shrink-0">
+                  <BookmarkButton
+                    post={{
+                      id: post._id,
+                      title: post.title,
+                      href: `/blogs/${post.slug}`,
+                    }}
+                  />
+                </div>
+              </div>
 
               <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-slate-800 pb-7">
                 {author?.username ? (
@@ -164,6 +171,7 @@ export default async function BlogPostPage({
                       <span className="block text-sm font-semibold text-white transition hover:text-blue-300">
                         {authorName}
                       </span>
+
                       <span className="block text-xs text-slate-500">
                         View profile
                       </span>
@@ -181,6 +189,7 @@ export default async function BlogPostPage({
                       <span className="block text-sm font-semibold text-white">
                         {authorName}
                       </span>
+
                       <span className="block text-xs text-slate-500">
                         Community author
                       </span>
@@ -279,6 +288,7 @@ export default async function BlogPostPage({
                 <h2 className="truncate font-semibold text-white">
                   {authorName}
                 </h2>
+
                 <p className="text-xs text-slate-400">Post author</p>
               </div>
             </div>
@@ -308,6 +318,7 @@ export default async function BlogPostPage({
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-400">
                     Published in
                   </p>
+
                   <h2 className="mt-0.5 truncate text-sm font-semibold text-white">
                     {post.community.name}
                   </h2>
@@ -356,5 +367,43 @@ export default async function BlogPostPage({
         </aside>
       </div>
     </main>
+  );
+}
+
+function BlogPostLoading() {
+  return (
+    <main className="mx-auto w-full max-w-7xl px-4 py-10 text-white sm:px-6 lg:px-8">
+      <div className="mb-6 h-5 w-28 animate-pulse rounded bg-slate-800" />
+
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:gap-7">
+        <div className="space-y-5">
+          <div className="h-64 animate-pulse rounded-2xl bg-slate-900 sm:h-80" />
+
+          <div className="h-8 w-3/4 animate-pulse rounded bg-slate-800" />
+
+          <div className="h-4 w-1/3 animate-pulse rounded bg-slate-800" />
+
+          <div className="space-y-3 pt-4">
+            <div className="h-4 animate-pulse rounded bg-slate-900" />
+            <div className="h-4 animate-pulse rounded bg-slate-900" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-slate-900" />
+          </div>
+        </div>
+
+        <div className="hidden h-56 animate-pulse rounded-xl bg-slate-900 lg:block" />
+      </div>
+    </main>
+  );
+}
+
+export default function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  return (
+    <Suspense fallback={<BlogPostLoading />}>
+      <BlogPostContent params={params} />
+    </Suspense>
   );
 }

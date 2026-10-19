@@ -2,7 +2,7 @@
 "use server";
 
 import "server-only";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { Types } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -18,6 +18,7 @@ export type EditPostState = { error?: string } | null;
 
 // Everything that lists or shows posts
 function refreshPages() {
+  updateTag("posts"); // cached Latest Blogs and Trending Topics
   revalidatePath("/");
   revalidatePath("/blogs");
   revalidatePath("/blogs/[slug]", "page");

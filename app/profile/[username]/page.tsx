@@ -42,7 +42,7 @@ return (
 <ProfileView
 user={{
 ...user,
-title: user.title?.trim() ?? "",
+	title: "",
 }}
 posts={posts}
 relationship={relationship}

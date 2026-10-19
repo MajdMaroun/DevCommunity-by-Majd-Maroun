@@ -1,8 +1,9 @@
+// app/(main)/create/actions.ts
 "use server";
 
 import "server-only";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { Types } from "mongoose";
 import { getCurrentUser } from "@/lib/queries/users";
 import { createPost } from "@/lib/queries/post";
@@ -66,6 +67,7 @@ export async function createPostAction(
   // Tell everyone who follows the author (drafts stay private)
   if (published) await notifyFollowers(user._id, slug);
 
+  updateTag("posts"); // cached Latest Blogs and Trending Topics
   revalidatePath("/");
   revalidatePath("/blogs");
   revalidatePath("/profile");

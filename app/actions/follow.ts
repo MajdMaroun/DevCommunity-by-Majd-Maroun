@@ -7,114 +7,123 @@ import Follow from "@/lib/models/Follow";
 import { revalidatePath } from "next/cache";
 import { notify, unnotify } from "@/lib/notifications";
 
-// Profile pages show follower counts and the follow button state
-function refreshPages() {
-  revalidatePath("/");
-  revalidatePath("/profile");
-  revalidatePath("/profile/[username]", "page");
+export async function toggleFollow(targetUserId: string) {
+const session = await auth();
+const currentUserId = session?.user?.id;
+
+if (!currentUserId) {
+return {
+success: false,
+error: "You must be logged in.",
+};
 }
 
-export async function toggleFollow(targetUserId: string) {
-  const session = await auth();
-  const currentUserId = session?.user?.id;
+if (currentUserId === targetUserId) {
+return {
+success: false,
+error: "You cannot follow yourself.",
+};
+}
 
-  if (!currentUserId) {
-    return {
-      success: false,
-      error: "You must be logged in.",
-    };
-  }
+await connectToDatabase();
 
-  if (currentUserId === targetUserId) {
-    return {
-      success: false,
-      error: "You cannot follow yourself.",
-    };
-  }
+// Verify that the target exists without loading the entire document.
+const targetExists = await User.exists({ _id: targetUserId });
 
-  await connectToDatabase();
+if (!targetExists) {
+return {
+success: false,
+error: "User not found.",
+};
+}
 
-  const targetUser = await User.findById(targetUserId);
+const existingFollow = await Follow.exists({
+follower: currentUserId,
+following: targetUserId,
+});
 
-  if (!targetUser) {
-    return {
-      success: false,
-      error: "User not found.",
-    };
-  }
+// UNFOLLOW
+if (existingFollow) {
+const deleted = await Follow.deleteOne({
+follower: currentUserId,
+following: targetUserId,
+});
 
-  const existingFollow = await Follow.findOne({
-    follower: currentUserId,
-    following: targetUserId,
-  });
+// Only update counts and notifications if a relationship was deleted.
+if (deleted.deletedCount > 0) {
+  await Promise.all([
+    User.updateOne(
+      { _id: currentUserId },
+      { $inc: { following: -1 } }
+    ),
+    User.updateOne(
+      { _id: targetUserId },
+      { $inc: { followers: -1 } }
+    ),
+    unnotify({
+      recipient: targetUserId,
+      actor: currentUserId,
+      type: "follow",
+    }),
+  ]);
+}
 
-  // UNFOLLOW
-  if (existingFollow) {
-    await Follow.deleteOne({
-      _id: existingFollow._id,
-    });
+revalidatePath("/");
+revalidatePath("/profile/[username]", "page");
 
-    // Unfollowing removes the "started following you" notification
-    await unnotify({ recipient: targetUserId, actor: currentUserId, type: "follow" });
+return {
+  success: true,
+  following: false,
+};
 
-    await User.findByIdAndUpdate(currentUserId, {
-      $inc: { following: -1 },
-    });
+}
 
-    await User.findByIdAndUpdate(targetUserId, {
-      $inc: { followers: -1 },
-    });
+// FOLLOW
+try {
+await Follow.create({
+follower: currentUserId,
+following: targetUserId,
+});
+} catch (error: unknown) {
+// Another request may have created this relationship concurrently.
+if (
+error &&
+typeof error === "object" &&
+"code" in error &&
+error.code === 11000
+) {
+return {
+success: true,
+following: true,
+};
+}
 
-    refreshPages();
+throw error;
 
-    return {
-      success: true,
-      following: false,
-    };
-  }
+}
 
-  // FOLLOW
-  try {
-    await Follow.create({
-      follower: currentUserId,
-      following: targetUserId,
-    });
-  } catch (error: unknown) {
-    // Duplicate follow
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === 11000
-    ) {
-      return {
-        success: true,
-        following: true,
-      };
-    }
+await Promise.all([
+User.updateOne(
+{ _id: currentUserId },
+{ $inc: { following: 1 } }
+),
+User.updateOne(
+{ _id: targetUserId },
+{ $inc: { followers: 1 } }
+),
+notify({
+recipient: targetUserId,
+actor: currentUserId,
+type: "follow",
+dedupe: true,
+}),
+]);
 
-    throw error;
-  }
+revalidatePath("/");
+revalidatePath("/profile/[username]", "page");
 
-  await notify({
-    recipient: targetUserId,
-    actor: currentUserId,
-    type: "follow",
-    dedupe: true,
-  });
-
-  await User.findByIdAndUpdate(currentUserId, {
-    $inc: { following: 1 },
-  });
-
-  await User.findByIdAndUpdate(targetUserId, {
-    $inc: { followers: 1 },
-  });
-
-  refreshPages();
-
-  return {
-    success: true,
-    following: true,
-  };
+return {
+success: true,
+following: true,
+};
 }

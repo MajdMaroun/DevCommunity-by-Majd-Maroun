@@ -1,14 +1,16 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
-  ArrowRight,
-  CalendarDays,
-  FileText,
-  ImageOff,
-  PenSquare,
-  Users,
+ArrowLeft,
+ArrowRight,
+CalendarDays,
+FileText,
+ImageOff,
+PenSquare,
+Users,
 } from "lucide-react";
+
 import JoinButton from "@/components/JoinButton";
 import { getCurrentUserId } from "@/lib/queries/auth";
 import { getCommunityBySlug } from "@/lib/queries/communities";
@@ -17,341 +19,382 @@ import { getPostsByCommunity } from "@/lib/queries/post";
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
 
 function formatCount(count: number) {
-  if (count >= 1_000_000) {
-    return `${(count / 1_000_000).toFixed(1).replace(".0", "")}M`;
-  }
+if (count >= 1_000_000) {
+return `${(count / 1_000_000).toFixed(1).replace(".0", "")}M`;
+}
 
-  if (count >= 1_000) {
-    return `${(count / 1_000).toFixed(1).replace(".0", "")}K`;
-  }
+if (count >= 1_000) {
+return `${(count / 1_000).toFixed(1).replace(".0", "")}K`;
+}
 
-  return String(count);
+return String(count);
 }
 
 function AuthorAvatar({
-  src,
-  name,
+src,
+name,
 }: {
-  src?: string | null;
-  name: string;
+src?: string | null;
+name: string;
 }) {
-  if (src) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt=""
-        referrerPolicy="no-referrer"
-        className="h-7 w-7 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-
-  const initials = name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return (
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-semibold text-white">
-      {initials || "U"}
-    </span>
-  );
+if (src) {
+return (
+// eslint-disable-next-line @next/next/no-img-element 
+<img
+     src={src}
+     alt=""
+     referrerPolicy="no-referrer"
+     className="h-7 w-7 shrink-0 rounded-full object-cover"
+   />
+);
 }
 
-export default async function CommunityPage({
-  params,
+const initials = name
+.split(" ")
+.filter(Boolean)
+.map((part) => part[0])
+.join("")
+.slice(0, 2)
+.toUpperCase();
+
+return ( <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-semibold text-white">
+{initials || "U"} </span>
+);
+}
+
+function CommunityLoading() {
+return ( <main className="mx-auto w-full max-w-6xl px-4 py-7 text-white sm:px-6 lg:px-8 lg:py-10"> <div className="mb-5 h-5 w-36 animate-pulse rounded bg-slate-800" />
+
+  <section className={`${card} overflow-hidden`}>
+    <div className="h-24 animate-pulse bg-slate-900 sm:h-28" />
+
+    <div className="space-y-4 px-5 py-6 sm:px-7">
+      <div className="h-8 w-2/3 animate-pulse rounded bg-slate-800" />
+      <div className="h-4 w-1/3 animate-pulse rounded bg-slate-900" />
+      <div className="h-4 w-full max-w-2xl animate-pulse rounded bg-slate-900" />
+    </div>
+  </section>
+
+  <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <section className="space-y-4">
+      <div className="h-7 w-40 animate-pulse rounded bg-slate-800" />
+
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className={`${card} h-36 animate-pulse`}
+        />
+      ))}
+    </section>
+
+    <aside className={`${card} hidden h-48 animate-pulse lg:block`} />
+  </div>
+</main>
+
+);
+}
+
+async function CommunityContent({
+params,
 }: {
-  params: Promise<{ slug: string }>;
+params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
+const { slug } = await params;
 
-  const userId = await getCurrentUserId();
-  const signedIn = !!userId;
+const userId = await getCurrentUserId();
+const signedIn = !!userId;
 
-  const community = await getCommunityBySlug(slug, userId);
-  if (!community) notFound();
+const community = await getCommunityBySlug(slug, userId);
 
-  const posts = await getPostsByCommunity(community.id);
+if (!community) {
+notFound();
+}
 
-  return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-7 text-white sm:px-6 lg:px-8 lg:py-10">
-      <Link
-        href="/communities"
-        className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-blue-300"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to communities
-      </Link>
+const posts = await getPostsByCommunity(community.id);
 
-      <section className={`${card} overflow-hidden`}>
-        <div className="h-24 border-b border-slate-800 bg-[radial-gradient(ellipse_at_75%_20%,rgba(59,130,246,0.24),transparent_60%)] sm:h-28" />
+return ( <main className="mx-auto w-full max-w-6xl px-4 py-7 text-white sm:px-6 lg:px-8 lg:py-10"> <Link
+     href="/communities"
+     className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-blue-300"
+   > <ArrowLeft className="h-4 w-4" />
+Back to communities </Link>
 
-        <div className="px-5 pb-6 sm:px-7">
-          <div className="-mt-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex items-end gap-4">
-              {community.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={community.logo}
-                  alt={`${community.name} logo`}
-                  referrerPolicy="no-referrer"
-                  className="h-20 w-20 shrink-0 rounded-2xl border-4 border-[#0f1629] bg-slate-900 object-contain"
-                />
-              ) : (
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-[#0f1629] bg-blue-500/15 text-3xl font-bold text-blue-300">
-                  {community.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+  <section className={`${card} overflow-hidden`}>
+    <div className="h-24 border-b border-slate-800 bg-[radial-gradient(ellipse_at_75%_20%,rgba(59,130,246,0.24),transparent_60%)] sm:h-28" />
 
-              <div className="min-w-0 pb-1">
-                <h1 className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  {community.name}
-                </h1>
-
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
-                  <Users className="h-4 w-4" />
-                  {formatCount(community.memberCount)}{" "}
-                  {community.memberCount === 1 ? "member" : "members"}
-                </p>
-              </div>
-            </div>
-
-            <div className="w-full sm:w-40">
-              <JoinButton
-                communityId={community.id}
-                joined={community.joined}
-                signedIn={signedIn}
-              />
-            </div>
-          </div>
-
-          <p className="mt-6 max-w-3xl text-sm leading-7 text-slate-300">
-            {community.description}
-          </p>
-
-          {community.topics.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-2">
-              {community.topics.map((topic) => (
-                <Link
-                  key={topic}
-                  href={`/blogs?topic=${encodeURIComponent(topic)}`}
-                  className="rounded-md bg-slate-800/80 px-2.5 py-1 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white"
-                >
-                  #{topic}
-                </Link>
-              ))}
+    <div className="px-5 pb-6 sm:px-7">
+      <div className="-mt-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex items-end gap-4">
+          {community.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={community.logo}
+              alt={`${community.name} logo`}
+              referrerPolicy="no-referrer"
+              className="h-20 w-20 shrink-0 rounded-2xl border-4 border-[#0f1629] bg-slate-900 object-contain"
+            />
+          ) : (
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-[#0f1629] bg-blue-500/15 text-3xl font-bold text-blue-300">
+              {community.name.charAt(0).toUpperCase()}
             </div>
           )}
+
+          <div className="min-w-0 pb-1">
+            <h1 className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              {community.name}
+            </h1>
+
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
+              <Users className="h-4 w-4" />
+              {formatCount(community.memberCount)}{" "}
+              {community.memberCount === 1 ? "member" : "members"}
+            </p>
+          </div>
+        </div>
+
+        <div className="w-full sm:w-40">
+          <JoinButton
+            communityId={community.id}
+            joined={community.joined}
+            signedIn={signedIn}
+          />
+        </div>
+      </div>
+
+      <p className="mt-6 max-w-3xl text-sm leading-7 text-slate-300">
+        {community.description}
+      </p>
+
+      {community.topics.length > 0 && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {community.topics.map((topic) => (
+            <Link
+              key={topic}
+              href={`/blogs?topic=${encodeURIComponent(topic)}`}
+              className="rounded-md bg-slate-800/80 px-2.5 py-1 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white"
+            >
+              #{topic}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <section className="min-w-0">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div>
+          <h2 className="text-xl font-bold text-white">Latest posts</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            {posts.length} {posts.length === 1 ? "post" : "posts"} published
+          </p>
+        </div>
+
+        {signedIn && (
+          <Link
+            href="/create"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
+          >
+            <PenSquare className="h-3.5 w-3.5" />
+            Create a post
+          </Link>
+        )}
+      </div>
+
+      {posts.length === 0 ? (
+        <div
+          className={`${card} flex flex-col items-center px-6 py-14 text-center`}
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/15 text-blue-300">
+            <FileText className="h-6 w-6" />
+          </span>
+
+          <h3 className="mt-4 text-base font-semibold text-white">
+            No posts yet
+          </h3>
+
+          <p className="mt-2 max-w-sm text-sm leading-6 text-slate-400">
+            Posts published in this community will appear here.
+          </p>
+
+          {signedIn && (
+            <Link
+              href="/create"
+              className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-800 hover:text-white"
+            >
+              <PenSquare className="h-3.5 w-3.5" />
+              Write the first post
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className={`${card} divide-y divide-slate-800 overflow-hidden`}>
+          {posts.map((post) => {
+            const authorName = post.author?.name ?? "Unknown author";
+            const href = `/blogs/${post.slug}`;
+            const cover = post.cover?.trim();
+
+            return (
+              <article
+                key={post._id}
+                className="group flex flex-col gap-4 p-4 transition hover:bg-slate-800/20 sm:flex-row sm:p-5"
+              >
+                <Link
+                  href={href}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  className="block shrink-0 overflow-hidden rounded-lg sm:w-44"
+                >
+                  {cover ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cover}
+                      alt=""
+                      loading="lazy"
+                      className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:aspect-auto sm:h-full sm:min-h-[7.5rem]"
+                    />
+                  ) : (
+                    <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-slate-800 to-slate-900 text-slate-600 sm:aspect-auto sm:h-full sm:min-h-[7.5rem]">
+                      <ImageOff className="h-7 w-7" aria-hidden="true" />
+                      <span className="text-[10px] font-medium">
+                        No cover image
+                      </span>
+                    </div>
+                  )}
+                </Link>
+
+                <div className="flex min-w-0 flex-1 flex-col">
+                  {post.topics?.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {post.topics.slice(0, 3).map((topic) => (
+                        <Link
+                          key={topic}
+                          href={`/blogs?topic=${encodeURIComponent(topic)}`}
+                          className="rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300 transition hover:bg-slate-700"
+                        >
+                          #{topic}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  <Link href={href} className="block">
+                    <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-white transition group-hover:text-blue-300 sm:text-lg">
+                      {post.title}
+                    </h3>
+                  </Link>
+
+                  <p className="mt-1.5 line-clamp-2 break-words text-sm leading-6 text-slate-400">
+                    {post.content}
+                  </p>
+
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4 text-xs text-slate-500">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+                      {post.author && (
+                        <div className="flex min-w-0 items-center gap-2">
+                          <AuthorAvatar
+                            src={post.author.image}
+                            name={authorName}
+                          />
+
+                          {post.author.username ? (
+                            <Link
+                              href={`/profile/${post.author.username}`}
+                              className="max-w-[10rem] truncate font-medium text-slate-300 transition hover:text-white"
+                            >
+                              {authorName}
+                            </Link>
+                          ) : (
+                            <span className="max-w-[10rem] truncate font-medium text-slate-300">
+                              {authorName}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <span className="flex items-center gap-1.5">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {new Date(post.createdAt).toLocaleDateString("en", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+
+                    <Link
+                      href={href}
+                      className="inline-flex items-center gap-1 font-semibold text-blue-400 transition hover:text-blue-300"
+                    >
+                      Read post
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+
+    <aside className="space-y-4 lg:sticky lg:top-24">
+      <section className={`${card} p-5`}>
+        <h2 className="text-sm font-semibold text-white">
+          About this community
+        </h2>
+
+        <p className="mt-3 text-xs leading-6 text-slate-400">
+          {community.description}
+        </p>
+
+        <div className="mt-5 grid grid-cols-2 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
+          <div>
+            <p className="text-lg font-bold text-white">
+              {formatCount(community.memberCount)}
+            </p>
+            <p className="text-[11px] text-slate-500">Members</p>
+          </div>
+
+          <div>
+            <p className="text-lg font-bold text-white">{posts.length}</p>
+            <p className="text-[11px] text-slate-500">Posts</p>
+          </div>
         </div>
       </section>
 
-      <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <section className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <div>
-              <h2 className="text-xl font-bold text-white">Latest posts</h2>
-              <p className="mt-1 text-xs text-slate-500">
-                {posts.length} {posts.length === 1 ? "post" : "posts"} published
-              </p>
-            </div>
+      {community.topics.length > 0 && (
+        <section className={`${card} p-5`}>
+          <h2 className="text-sm font-semibold text-white">
+            Community topics
+          </h2>
 
-            {signedIn && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {community.topics.map((topic) => (
               <Link
-                href="/create"
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-500"
+                key={topic}
+                href={`/blogs?topic=${encodeURIComponent(topic)}`}
+                className="rounded-md bg-slate-800/80 px-2.5 py-1 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white"
               >
-                <PenSquare className="h-3.5 w-3.5" />
-                Create a post
+                #{topic}
               </Link>
-            )}
+            ))}
           </div>
-
-          {posts.length === 0 ? (
-            <div
-              className={`${card} flex flex-col items-center px-6 py-14 text-center`}
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/15 text-blue-300">
-                <FileText className="h-6 w-6" />
-              </span>
-
-              <h3 className="mt-4 text-base font-semibold text-white">
-                No posts yet
-              </h3>
-
-              <p className="mt-2 max-w-sm text-sm leading-6 text-slate-400">
-                Posts published in this community will appear here.
-              </p>
-
-              {signedIn && (
-                <Link
-                  href="/create"
-                  className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-800 hover:text-white"
-                >
-                  <PenSquare className="h-3.5 w-3.5" />
-                  Write the first post
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className={`${card} divide-y divide-slate-800 overflow-hidden`}>
-              {posts.map((post) => {
-                const authorName = post.author?.name ?? "Unknown author";
-                const href = `/blogs/${post.slug}`;
-                const cover = post.cover?.trim();
-
-                return (
-                  // Phones: cover on top, text below. From "sm" up: cover on the left, text on the right.
-                  <article
-                    key={post._id}
-                    className="group flex flex-col gap-4 p-4 transition hover:bg-slate-800/20 sm:flex-row sm:p-5"
-                  >
-                    {/* Cover (or a "no image" icon) */}
-                    <Link
-                      href={href}
-                      tabIndex={-1}
-                      aria-hidden="true"
-                      className="block shrink-0 overflow-hidden rounded-lg sm:w-44"
-                    >
-                      {cover ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={cover}
-                          alt=""
-                          className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:aspect-auto sm:h-full sm:min-h-[7.5rem]"
-                        />
-                      ) : (
-                        <div className="flex aspect-[16/9] w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-slate-800 to-slate-900 text-slate-600 sm:aspect-auto sm:h-full sm:min-h-[7.5rem]">
-                          <ImageOff className="h-7 w-7" aria-hidden="true" />
-                          <span className="text-[10px] font-medium">No cover image</span>
-                        </div>
-                      )}
-                    </Link>
-
-                    {/* Text */}
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      {post.topics?.length > 0 && (
-                        <div className="mb-2 flex flex-wrap gap-1.5">
-                          {post.topics.slice(0, 3).map((topic) => (
-                            <Link
-                              key={topic}
-                              href={`/blogs?topic=${encodeURIComponent(topic)}`}
-                              className="rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300 transition hover:bg-slate-700"
-                            >
-                              #{topic}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-
-                      <Link href={href} className="block">
-                        <h3 className="line-clamp-2 break-words text-base font-semibold leading-snug text-white transition group-hover:text-blue-300 sm:text-lg">
-                          {post.title}
-                        </h3>
-                      </Link>
-
-                      <p className="mt-1.5 line-clamp-2 break-words text-sm leading-6 text-slate-400">
-                        {post.content}
-                      </p>
-
-                      {/* Meta row: author and date on the left, "Read post" on the right.
-                          It wraps onto two lines on very narrow screens instead of squeezing. */}
-                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4 text-xs text-slate-500">
-                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-                          {post.author && (
-                            <div className="flex min-w-0 items-center gap-2">
-                              <AuthorAvatar src={post.author.image} name={authorName} />
-
-                              {post.author.username ? (
-                                <Link
-                                  href={`/profile/${post.author.username}`}
-                                  className="max-w-[10rem] truncate font-medium text-slate-300 transition hover:text-white"
-                                >
-                                  {authorName}
-                                </Link>
-                              ) : (
-                                <span className="max-w-[10rem] truncate font-medium text-slate-300">
-                                  {authorName}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <span className="flex items-center gap-1.5">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            {new Date(post.createdAt).toLocaleDateString("en", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </div>
-
-                        <Link
-                          href={href}
-                          className="inline-flex items-center gap-1 font-semibold text-blue-400 transition hover:text-blue-300"
-                        >
-                          Read post
-                          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
         </section>
+      )}
+    </aside>
+  </div>
+</main>
 
-        <aside className="space-y-4 lg:sticky lg:top-24">
-          <section className={`${card} p-5`}>
-            <h2 className="text-sm font-semibold text-white">
-              About this community
-            </h2>
+);
+}
 
-            <p className="mt-3 text-xs leading-6 text-slate-400">
-              {community.description}
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
-              <div>
-                <p className="text-lg font-bold text-white">
-                  {formatCount(community.memberCount)}
-                </p>
-                <p className="text-[11px] text-slate-500">Members</p>
-              </div>
-
-              <div>
-                <p className="text-lg font-bold text-white">{posts.length}</p>
-                <p className="text-[11px] text-slate-500">Posts</p>
-              </div>
-            </div>
-          </section>
-
-          {community.topics.length > 0 && (
-            <section className={`${card} p-5`}>
-              <h2 className="text-sm font-semibold text-white">
-                Community topics
-              </h2>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {community.topics.map((topic) => (
-                  <Link
-                    key={topic}
-                    href={`/blogs?topic=${encodeURIComponent(topic)}`}
-                    className="rounded-md bg-slate-800/80 px-2.5 py-1 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white"
-                  >
-                    #{topic}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </aside>
-      </div>
-    </main>
-  );
+export default function CommunityPage({
+params,
+}: {
+params: Promise<{ slug: string }>;
+}) {
+return (
+<Suspense fallback={<CommunityLoading />}> <CommunityContent params={params} /> </Suspense>
+);
 }

@@ -2,7 +2,10 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateProfile, type ProfileFormState } from "@/app/actions/profile";
+import {
+  updateProfile,
+  type ProfileFormState,
+} from "@/app/actions/profile";
 
 type Props = {
   user: {
@@ -23,38 +26,46 @@ const input =
 const label = "mb-1 block text-xs font-medium text-slate-300";
 
 const MAX_FILE_MB = 5;
-const SIZE = 256;
+const SIZE = 512;
 
-// Center-crop to a square, shrink to 256px, return a small JPEG data URL
+// Center-crop the image to a square and resize it to 512 × 512.
 async function fileToAvatar(file: File): Promise<string> {
   const bmp = await createImageBitmap(file);
-  const side = Math.min(bmp.width, bmp.height);
-  const sx = (bmp.width - side) / 2;
-  const sy = (bmp.height - side) / 2;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+  try {
+    const side = Math.min(bmp.width, bmp.height);
+    const sx = (bmp.width - side) / 2;
+    const sy = (bmp.height - side) / 2;
 
-  const ctx = canvas.getContext("2d");
+    const canvas = document.createElement("canvas");
+    canvas.width = SIZE;
+    canvas.height = SIZE;
 
-  if (!ctx) {
-    throw new Error("Canvas not supported");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("Canvas not supported");
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    ctx.drawImage(
+      bmp,
+      sx,
+      sy,
+      side,
+      side,
+      0,
+      0,
+      SIZE,
+      SIZE
+    );
+
+    return canvas.toDataURL("image/jpeg", 0.95);
+  } finally {
+    bmp.close();
   }
-
-  ctx.drawImage(
-    bmp,
-    sx,
-    sy,
-    side,
-    side,
-    0,
-    0,
-    SIZE,
-    SIZE
-  );
-
-  return canvas.toDataURL("image/jpeg", 0.85);
 }
 
 export default function SettingsForm({ user }: Props) {
@@ -70,7 +81,7 @@ export default function SettingsForm({ user }: Props) {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Refresh server data after a successful save
+  // Refresh server data after a successful save.
   useEffect(() => {
     if (state.ok) {
       window.dispatchEvent(new Event("profile:updated"));
@@ -95,18 +106,22 @@ export default function SettingsForm({ user }: Props) {
 
     if (!file.type.startsWith("image/")) {
       setImgError("Please choose an image file.");
+      e.target.value = "";
       return;
     }
 
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
       setImgError(`Image must be under ${MAX_FILE_MB} MB.`);
+      e.target.value = "";
       return;
     }
 
     try {
-      setImage(await fileToAvatar(file));
+      const optimizedImage = await fileToAvatar(file);
+      setImage(optimizedImage);
     } catch {
       setImgError("Could not read that image. Try another one.");
+      e.target.value = "";
     }
   }
 
@@ -121,12 +136,12 @@ export default function SettingsForm({ user }: Props) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={image}
-              alt=""
+              alt="Profile photo preview"
               referrerPolicy="no-referrer"
-              className="h-20 w-20 rounded-full object-cover"
+              className="h-20 w-20 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold text-white">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-2xl font-semibold text-white">
               {initials}
             </div>
           )}
@@ -143,7 +158,14 @@ export default function SettingsForm({ user }: Props) {
             {image && (
               <button
                 type="button"
-                onClick={() => setImage("")}
+                onClick={() => {
+                  setImage("");
+                  setImgError("");
+
+                  if (fileRef.current) {
+                    fileRef.current.value = "";
+                  }
+                }}
                 className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-red-300"
               >
                 Remove
@@ -160,8 +182,12 @@ export default function SettingsForm({ user }: Props) {
           />
         </div>
 
+        <p className="mt-2 text-[11px] text-slate-500">
+          Use a clear, square photo for the best results. Maximum file size: 5 MB.
+        </p>
+
         {imgError && (
-          <p className="mt-2 text-xs text-red-400">
+          <p className="mt-2 text-xs text-red-400" role="alert">
             {imgError}
           </p>
         )}
@@ -185,25 +211,25 @@ export default function SettingsForm({ user }: Props) {
         />
       </div>
 
-{/* Professional Title */}
-<div>
-  <label htmlFor="title" className={label}>
-    Professional Title (Optional)
-  </label>
+      {/* Professional Title */}
+      <div>
+        <label htmlFor="title" className={label}>
+          Professional Title (Optional)
+        </label>
 
-  <input
-    id="title"
-    name="title"
-    defaultValue={user.title ?? ""}
-    maxLength={50}
-    placeholder="e.g. Student, Designer, Software Engineer"
-    className={input}
-  />
+        <input
+          id="title"
+          name="title"
+          defaultValue={user.title ?? ""}
+          maxLength={50}
+          placeholder="e.g. Student, Designer, Software Engineer"
+          className={input}
+        />
 
-  <p className="mt-1 text-[11px] text-slate-500">
-    Tell people what you do. Leave empty if you prefer.
-  </p>
-</div>
+        <p className="mt-1 text-[11px] text-slate-500">
+          Tell people what you do. Leave empty if you prefer.
+        </p>
+      </div>
 
       {/* Username */}
       <div>
