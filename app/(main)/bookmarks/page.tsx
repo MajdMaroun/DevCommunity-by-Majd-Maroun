@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Bookmark, Trash2 } from "lucide-react";
+import { ArrowRight, Bookmark, BookmarkOff, } from "lucide-react";
 import { useBookmarks } from "@/lib/models/Bookmark";
 
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
@@ -79,7 +79,7 @@ const BookmarksPage = () => {
                 aria-label={`Remove ${post.title} from bookmarks`}
                 className="shrink-0 rounded-lg border border-slate-700 p-2.5 text-slate-400 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 sm:p-2"
               >
-                <Trash2 className="h-4 w-4" />
+                <BookmarkOff className="h-4 w-4" />
               </button>
               <Link
                 href={post.href}

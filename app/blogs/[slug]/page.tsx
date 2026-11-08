@@ -15,6 +15,8 @@ import BookmarkButton from "@/components/BookmarkButton";
 import { getLikeState } from "@/lib/queries/engagement";
 import { getPostBySlug } from "@/lib/queries/post";
 import { getCurrentUser } from "@/lib/queries/users";
+import ShareButton from "@/components/ShareButton";
+import type { Metadata } from "next";
 
 function Avatar({
   src,
@@ -63,6 +65,38 @@ function formatDate(value: string | Date) {
     day: "numeric",
     year: "numeric",
   }).format(new Date(value));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+
+  // Never reveal the title of a missing post or a draft
+  if (!post || !post.published) return { title: "Post not found" };
+
+  const description = post.content.replace(/\s+/g, " ").trim().slice(0, 160);
+
+  return {
+    title: post.title,
+    description,
+    openGraph: {
+      title: post.title,
+      description,
+      type: "article",
+      url: `/blogs/${post.slug}`,
+      images: post.cover ? [post.cover] : undefined,
+    },
+    twitter: {
+      card: post.cover ? "summary_large_image" : "summary",
+      title: post.title,
+      description,
+      images: post.cover ? [post.cover] : undefined,
+    },
+  };
 }
 
 async function BlogPostContent({
@@ -251,15 +285,18 @@ async function BlogPostContent({
               </div>
 
               {post.published && (
-                <div className="mx-auto max-w-3xl">
-                  <LikeButton
-                    postId={post._id}
-                    initialLiked={like.liked}
-                    initialCount={like.count}
-                    signedIn={!!me}
-                  />
-                </div>
-              )}
+  <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 pt-6">
+    <LikeButton
+      postId={post._id}
+      initialLiked={like.liked}
+      initialCount={like.count}
+      signedIn={!!me}
+    />
+
+    <ShareButton path={`/blogs/${post.slug}`} title={post.title} />
+  </div>
+)}
+              
             </div>
           </article>
 

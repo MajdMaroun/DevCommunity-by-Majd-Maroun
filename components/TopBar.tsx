@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Search,
-  Bell,
   ChevronDown,
   Users,
   FileText,
@@ -15,6 +14,9 @@ import {
   Reply,
   LoaderCircle,
   RefreshCw,
+  BellRing,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
@@ -423,7 +425,7 @@ export default function Topbar({
         return <FileText size={17} />;
 
       default:
-        return <Bell size={17} />;
+        return <BellRing size={17} />;
     }
   };
 
@@ -595,7 +597,7 @@ export default function Topbar({
                 : "text-gray-400 hover:bg-gray-900 hover:text-white"
             }`}
           >
-            <Bell size={20} />
+            <BellRing size={20} />
 
             {display && notificationCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-2 border-gray-950 bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
@@ -650,7 +652,7 @@ export default function Topbar({
 
               {!display ? (
                 <div className="px-5 py-9 text-center">
-                  <Bell
+                  <BellRing
                     className="mx-auto mb-3 text-gray-600"
                     size={25}
                   />
@@ -689,7 +691,7 @@ export default function Topbar({
               ) : notifications.length === 0 ? (
                 <div className="px-5 py-10 text-center">
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900 text-gray-500">
-                    <Bell size={21} />
+                    <BellRing size={21} />
                   </div>
 
                   <p className="text-sm font-medium text-gray-200">
@@ -804,49 +806,52 @@ export default function Topbar({
             </button>
 
             {menuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full mt-3 w-52 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 py-1.5 text-sm shadow-2xl"
-              >
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    router.push("/profile");
-                  }}
-                  className="block w-full px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
-                >
-                  Profile
-                </button>
+  <div
+    role="menu"
+    className="absolute right-0 top-full mt-3 w-52 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 py-1.5 text-sm shadow-2xl"
+  >
+    <button
+      type="button"
+      role="menuitem"
+      onClick={() => {
+        setMenuOpen(false);
+        router.push("/profile");
+      }}
+      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
+    >
+      <User className="h-4 w-4" />
+      Profile
+    </button>
 
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    router.push("/settings");
-                  }}
-                  className="block w-full px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
-                >
-                  Settings
-                </button>
+    <button
+      type="button"
+      role="menuitem"
+      onClick={() => {
+        setMenuOpen(false);
+        router.push("/settings");
+      }}
+      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
+    >
+      <Settings className="h-4 w-4" />
+      Settings
+    </button>
 
-                <div className="my-1 border-t border-gray-800" />
+    <div className="my-1 border-t border-gray-800" />
 
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="block w-full px-4 py-2.5 text-left text-rose-400 transition hover:bg-rose-500/10"
-                >
-                  Log out
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+    <button
+      type="button"
+      role="menuitem"
+      onClick={() => signOut({ callbackUrl: "/" })}
+      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-rose-400 transition hover:bg-rose-500/10"
+    >
+      <LogOut className="h-4 w-4" />
+      Log out
+    </button>
+  </div>
+)}
       </div>
-    </header>
-  );
+    )}
+  </div>
+</header>
+);
 }

@@ -4,20 +4,20 @@ import { cacheLife, cacheTag } from "next/cache";
 import BookmarkButton from "@/components/BookmarkButton";
 import Reveal from "@/components/Reveal";
 import {
-ArrowRight,
-Calendar,
-Flame,
-MapPin,
-PenSquare,
-Users,
+  ArrowRight,
+  Calendar,
+  Flame,
+  MapPin,
+  PenSquare,
+  Users,
 } from "lucide-react";
 import JoinButton from "@/components/JoinButton";
 import { getSession } from "@/lib/session";
 import {
-getFeaturedCommunitiesPublic,
-getJoinedCommunityIds,
-getMyCommunities,
-getProfile,
+  getFeaturedCommunitiesPublic,
+  getJoinedCommunityIds,
+  getMyCommunities,
+  getProfile,
 } from "@/lib/queries/home";
 import { getTrendingTopics, getLatestBlogs } from "@/lib/queries/post";
 import { getFollowerCount } from "@/lib/queries/follow";
@@ -25,573 +25,668 @@ import { getFollowerCount } from "@/lib/queries/follow";
 /* ---------- helpers ---------- */
 
 function formatCount(n: number) {
-if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".0", "")}M`;
-if (n >= 1000) return `${(n / 1000).toFixed(1).replace(".0", "")}K`;
-return String(n);
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".0", "")}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(".0", "")}K`;
+  return String(n);
 }
 
 function Initial({ name, className = "" }: { name: string; className?: string }) {
-return (
-<div
-className={`flex shrink-0 items-center justify-center rounded-xl bg-blue-500/15 font-bold text-blue-300 ${className}`}
->
-{name.charAt(0).toUpperCase()} </div>
-);
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-xl bg-blue-500/15 font-bold text-blue-300 transition-[transform,background-color] duration-300 ease-out group-hover:scale-110 group-hover:bg-blue-500/25 motion-reduce:transform-none ${className}`}
+    >
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
 }
 
 function Logo({
-name,
-src,
-className,
+  name,
+  src,
+  className,
 }: {
-name: string;
-src?: string;
-className: string;
+  name: string;
+  src?: string;
+  className: string;
 }) {
-if (!src) return <Initial name={name} className={className} />;
+  if (!src) return <Initial name={name} className={className} />;
 
-return (
-// eslint-disable-next-line @next/next/no-img-element
-<img
-src={src}
-alt=""
-referrerPolicy="no-referrer"
-className={`${className} rounded-xl object-contain`}
-/>
-);
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
+      className={`${className} rounded-xl object-contain transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transform-none`}
+    />
+  );
 }
 
 function Avatar({
-src,
-name = "",
-className,
-textClass = "text-xs",
+  src,
+  name = "",
+  className,
+  textClass = "text-xs",
 }: {
-src?: string | null;
-name?: string;
-className: string;
-textClass?: string;
+  src?: string | null;
+  name?: string;
+  className: string;
+  textClass?: string;
 }) {
-if (!src) {
-const initials = name
-.split(" ")
-.filter(Boolean)
-.map((n) => n[0])
-.join("")
-.slice(0, 2)
-.toUpperCase();
+  if (!src) {
+    const initials = name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
 
-return (
-  <span
-    className={`${className} ${textClass} flex shrink-0 items-center justify-center rounded-full bg-indigo-500 font-semibold text-white`}
-  >
-    {initials}
-  </span>
-);
+    return (
+      <span
+        className={`${className} ${textClass} flex shrink-0 items-center justify-center rounded-full bg-indigo-500 font-semibold text-white ring-2 ring-transparent transition-[transform,box-shadow] duration-300 ease-out hover:scale-110 hover:ring-indigo-400/40 motion-reduce:transform-none`}
+      >
+        {initials}
+      </span>
+    );
+  }
 
-}
-
-return (
-// eslint-disable-next-line @next/next/no-img-element
-<img
-src={src}
-alt=""
-referrerPolicy="no-referrer"
-className={`${className} shrink-0 rounded-full object-cover`}
-/>
-);
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
+      className={`${className} shrink-0 rounded-full object-cover ring-2 ring-transparent transition-[transform,box-shadow] duration-300 ease-out hover:scale-110 hover:ring-blue-400/40 motion-reduce:transform-none`}
+    />
+  );
 }
 
 function SectionHeader({ title, href }: { title: string; href: string }) {
-return ( <div className="mb-3 flex items-center justify-between"> <h2 className="text-lg font-bold text-white">{title}</h2> <Link
-     href={href}
-     className="flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors duration-200 hover:text-blue-300"
-   >
-View all <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" /> </Link> </div>
-);
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <h2 className="text-lg font-bold text-white">{title}</h2>
+      <Link
+        href={href}
+        className="group flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors duration-200 hover:text-blue-300"
+      >
+        View all
+        <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transform-none" />
+      </Link>
+    </div>
+  );
 }
 
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
-const chip = "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300";
+const chip =
+  "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300 transition-[background-color,color,transform] duration-200 hover:scale-105 hover:bg-blue-500/20 hover:text-blue-200 motion-reduce:transform-none";
 
 /* ---------- loading skeletons ---------- */
 
 function Pulse({ className }: { className: string }) {
-return <div className={`animate-pulse rounded-lg bg-slate-800 ${className}`} />;
+  return <div className={`animate-pulse rounded-lg bg-slate-800 ${className}`} />;
 }
 
 function FeaturedSkeleton() {
-return ( <div
-   className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6"
-   aria-busy="true"
- >
-{Array.from({ length: 6 }).map((_, i) => (
-<div key={i} className={`${card} space-y-3 p-4`}> <Pulse className="h-11 w-11" /> <Pulse className="h-4 w-24" /> <Pulse className="h-8 w-full" /> <Pulse className="h-9 w-full" /> </div>
-))} </div>
-);
+  return (
+    <div
+      className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6"
+      aria-busy="true"
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className={`${card} space-y-3 p-4`}>
+          <Pulse className="h-11 w-11" />
+          <Pulse className="h-4 w-24" />
+          <Pulse className="h-8 w-full" />
+          <Pulse className="h-9 w-full" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function BlogsSkeleton() {
-return (
-<div className={`${card} divide-y divide-slate-800`} aria-busy="true">
-{Array.from({ length: 3 }).map((_, i) => ( <div
-       key={i}
-       className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4"
-     > <Pulse className="aspect-[16/9] w-full sm:aspect-auto sm:h-[74px] sm:w-[132px]" /> <div className="flex-1 space-y-2"> <Pulse className="h-4 w-2/3" /> <Pulse className="h-3 w-full" /> <Pulse className="h-3 w-1/3" /> </div> </div>
-))} </div>
-);
+  return (
+    <div className={`${card} divide-y divide-slate-800`} aria-busy="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4"
+        >
+          <Pulse className="aspect-[16/9] w-full sm:aspect-auto sm:h-[74px] sm:w-[132px]" />
+          <div className="flex-1 space-y-2">
+            <Pulse className="h-4 w-2/3" />
+            <Pulse className="h-3 w-full" />
+            <Pulse className="h-3 w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SideCardSkeleton({ rows = 3 }: { rows?: number }) {
-return (
-<div className={`${card} space-y-3 p-5`} aria-busy="true"> <Pulse className="h-5 w-32" />
-{Array.from({ length: rows }).map((_, i) => ( <Pulse key={i} className="h-10 w-full" />
-))} </div>
-);
+  return (
+    <div className={`${card} space-y-3 p-5`} aria-busy="true">
+      <Pulse className="h-5 w-32" />
+      {Array.from({ length: rows }).map((_, i) => (
+        <Pulse key={i} className="h-10 w-full" />
+      ))}
+    </div>
+  );
 }
 
 /* ---------- featured communities ---------- */
 
 async function FeaturedCommunitiesList() {
-const session = await getSession();
-const userId = session?.user?.id ?? null;
+  const session = await getSession();
+  const userId = session?.user?.id ?? null;
 
-const featured = await getFeaturedCommunitiesPublic();
-const joinedIds = new Set(
-await getJoinedCommunityIds(
-userId,
-featured.map((c) => c.id)
-)
-);
+  const featured = await getFeaturedCommunitiesPublic();
+  const joinedIds = new Set(
+    await getJoinedCommunityIds(
+      userId,
+      featured.map((c) => c.id)
+    )
+  );
 
-if (featured.length === 0) {
-return (
-<p className={`${card} p-6 text-sm text-slate-400`}>
-No communities yet. Be the first to{" "} <Link
-       href="/communities/create"
-       className="text-blue-400 hover:text-blue-300"
-     >
-create one </Link>
-. </p>
-);
-}
+  if (featured.length === 0) {
+    return (
+      <p className={`${card} p-6 text-sm text-slate-400`}>
+        No communities yet. Be the first to{" "}
+        <Link
+          href="/communities/create"
+          className="text-blue-400 transition-colors duration-200 hover:text-blue-300"
+        >
+          create one
+        </Link>
+        .
+      </p>
+    );
+  }
 
-return ( <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
-{featured.map((c, i) => (
-<Reveal key={c.id} delay={i * 50} className="min-w-0">
-<div
-className={`${card} flex h-full flex-col p-4 transition-[border-color,box-shadow] duration-200 hover:border-slate-600 hover:shadow-lg hover:shadow-blue-950/20`}
->
-<Link href={`/communities/${c.slug}`} className="block"> <Logo name={c.name} src={c.logo} className="h-11 w-11 text-lg" /> <h3 className="mt-3 text-sm font-semibold text-white transition-colors duration-200 hover:text-blue-300">
-{c.name} </h3> <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs text-slate-400">
-{c.description} </p> </Link>
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-6">
+      {featured.map((c, i) => (
+        <Reveal key={c.id} delay={i * 50} className="min-w-0">
+          <div
+            className={`${card} group flex h-full flex-col p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-blue-500/40 hover:bg-[#121b33] hover:shadow-xl hover:shadow-blue-950/30 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none`}
+          >
+            <Link href={`/communities/${c.slug}`} className="block">
+              <Logo name={c.name} src={c.logo} className="h-11 w-11 text-lg" />
+              <h3 className="mt-3 text-sm font-semibold text-white transition-colors duration-200 group-hover:text-blue-300">
+                {c.name}
+              </h3>
+              <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs text-slate-400 transition-colors duration-200 group-hover:text-slate-300">
+                {c.description}
+              </p>
+            </Link>
 
-        <div className="mt-3 flex flex-wrap gap-1">
-          {c.topics.slice(0, 2).map((t) => (
-            <span key={t} className={chip}>
-              #{t}
-            </span>
-          ))}
-        </div>
+            <div className="mt-3 flex flex-wrap gap-1">
+              {c.topics.slice(0, 2).map((t) => (
+                <span key={t} className={chip}>
+                  #{t}
+                </span>
+              ))}
+            </div>
 
-        <div className="mt-auto pt-3">
-          <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
-            <Users className="h-3.5 w-3.5" />
-            {formatCount(c.memberCount)}{" "}
-            {c.memberCount === 1 ? "member" : "members"}
-          </p>
-          <JoinButton
-            communityId={c.id}
-            joined={joinedIds.has(c.id)}
-            signedIn={!!userId}
-          />
-        </div>
-      </div>
-    </Reveal>
-  ))}
-</div>
-
-);
+            <div className="mt-auto pt-3">
+              <p className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
+                <Users className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-125 group-hover:text-blue-400 motion-reduce:transform-none" />
+                {formatCount(c.memberCount)}{" "}
+                {c.memberCount === 1 ? "member" : "members"}
+              </p>
+              <JoinButton
+                communityId={c.id}
+                joined={joinedIds.has(c.id)}
+                signedIn={!!userId}
+              />
+            </div>
+          </div>
+        </Reveal>
+      ))}
+    </div>
+  );
 }
 
 /* ---------- profile card ---------- */
 
 async function ProfileCard() {
-const session = await getSession();
-const userId = session?.user?.id ?? null;
+  const session = await getSession();
+  const userId = session?.user?.id ?? null;
 
-const [dbProfile, followerCount] = await Promise.all([
-getProfile(userId),
-getFollowerCount(userId),
-]);
+  const [dbProfile, followerCount] = await Promise.all([
+    getProfile(userId),
+    getFollowerCount(userId),
+  ]);
 
-const withLiveFollowers = (
-stats: { label: string; value: string | number }[]
-) =>
-stats.map((s) =>
-s.label.toLowerCase() === "followers"
-? { ...s, value: followerCount }
-: s
-);
+  const withLiveFollowers = (
+    stats: { label: string; value: string | number }[]
+  ) =>
+    stats.map((s) =>
+      s.label.toLowerCase() === "followers"
+        ? { ...s, value: followerCount }
+        : s
+    );
 
-const profile = dbProfile
-? {
-...dbProfile,
-image: dbProfile.image || undefined,
-stats: withLiveFollowers(dbProfile.stats),
-}
-: session?.user
-? {
-name: session.user.name ?? session.user.email ?? "User",
-image: session.user.image ?? undefined,
-title: "Developer",
-bio: "",
-location: "",
-joined: "",
-stats: [] as { label: string; value: string | number }[],
-skills: [] as string[],
-}
-: null;
+  const profile = dbProfile
+    ? {
+        ...dbProfile,
+        image: dbProfile.image || undefined,
+        stats: withLiveFollowers(dbProfile.stats),
+      }
+    : session?.user
+    ? {
+        name: session.user.name ?? session.user.email ?? "User",
+        image: session.user.image ?? undefined,
+        title: "Developer",
+        bio: "",
+        location: "",
+        joined: "",
+        stats: [] as { label: string; value: string | number }[],
+        skills: [] as string[],
+      }
+    : null;
 
-if (!profile) {
-return (
-<section className={`${card} p-5`}> <h2 className="font-semibold text-white">Join DevCommunity</h2> <p className="mt-1 text-xs text-slate-400">
-Sign in to join communities, bookmark blogs and publish your own posts. </p> <Link
-       href="/login"
-       className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-[background-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-blue-500 active:translate-y-0 motion-reduce:transform-none"
-     >
-Sign in </Link> </section>
-);
-}
+  if (!profile) {
+    return (
+      <section
+        className={`${card} p-5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-slate-700 hover:shadow-lg hover:shadow-blue-950/20 motion-reduce:transform-none`}
+      >
+        <h2 className="font-semibold text-white">Join DevCommunity</h2>
+        <p className="mt-1 text-xs text-slate-400">
+          Sign in to join communities, bookmark blogs and publish your own
+          posts.
+        </p>
+        <Link
+          href="/login"
+          className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-950/40 active:translate-y-0 active:scale-95 motion-reduce:transform-none"
+        >
+          Sign in
+        </Link>
+      </section>
+    );
+  }
 
-return (
-<section className={`${card} p-5 transition-colors duration-200 hover:border-slate-700`}> <div className="flex items-center gap-3"> <Avatar
-       src={profile.image}
-       name={profile.name}
-       className="h-14 w-14"
-       textClass="text-xl"
-     /> <div className="min-w-0"> <h2 className="truncate font-semibold text-white">{profile.name}</h2> <p className="truncate text-xs text-slate-400">
-{profile.title || "Developer"} </p> </div> </div>
+  return (
+    <section
+      className={`${card} group/profile p-5 transition-all duration-300 ease-out hover:border-slate-700 hover:shadow-lg hover:shadow-blue-950/20`}
+    >
+<div className="flex items-center gap-3">
+  <Link href="/profile" title="View profile">
+    <Avatar
+      src={profile.image}
+      name={profile.name}
+      className="h-14 w-14 cursor-pointer transition-opacity hover:opacity-80"
+      textClass="text-xl"
+    />
+  </Link>
 
-  {profile.bio && (
-    <p className="mt-4 text-xs leading-relaxed text-slate-300">
-      {profile.bio}
+  <div className="min-w-0">
+    <h2 className="truncate font-semibold text-white">
+      {profile.name}
+    </h2>
+    <p className="truncate text-xs text-slate-400">
+      {profile.title || "Developer"}
     </p>
-  )}
+  </div>
+</div>
 
-  {(profile.location || profile.joined) && (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-      {profile.location && (
-        <span className="flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5" />
-          {profile.location}
-        </span>
-      )}
-      {profile.joined && (
-        <span className="flex items-center gap-1.5">
-          <Calendar className="h-3.5 w-3.5" />
-          Joined {profile.joined}
-        </span>
-      )}
+{profile.bio && (
+  <p className="mt-4 text-xs leading-relaxed text-slate-300">
+    {profile.bio}
+  </p>
+)}
+
+{(profile.location || profile.joined) && (
+  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+    {profile.location && (
+      <span className="group flex items-center gap-1.5 transition-colors duration-200 hover:text-slate-200">
+        <MapPin className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-blue-400 motion-reduce:transform-none" />
+        {profile.location}
+      </span>
+    )}
+
+    {profile.joined && (
+      <span className="group flex items-center gap-1.5 transition-colors duration-200 hover:text-slate-200">
+        <Calendar className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-blue-400 motion-reduce:transform-none" />
+        Joined {profile.joined}
+      </span>
+    )}
+  </div>
+)}
+
+{profile.stats.length > 0 && (
+  <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
+    {profile.stats.map((s) => (
+      <div
+        key={s.label}
+        className="group cursor-default transition-transform duration-200 hover:scale-110 motion-reduce:transform-none"
+      >
+        <p className="text-lg font-bold text-white transition-colors duration-200 group-hover:text-blue-300">
+          {s.value}
+        </p>
+        <p className="text-[11px] text-slate-400">{s.label}</p>
+      </div>
+    ))}
+  </div>
+)}
+
+{profile.skills.length > 0 && (
+  <div className="mt-4 border-t border-slate-800 pt-4">
+    <div className="mb-2 flex items-center justify-between">
+      <h3 className="text-sm font-semibold text-white">Skills</h3>
+      <Link
+        href="/settings"
+        className="text-xs text-blue-400 transition-colors duration-200 hover:text-blue-300"
+      >
+        Edit
+      </Link>
     </div>
-  )}
 
-  {profile.stats.length > 0 && (
-    <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
-      {profile.stats.map((s) => (
-        <div key={s.label}>
-          <p className="text-lg font-bold text-white">{s.value}</p>
-          <p className="text-[11px] text-slate-400">{s.label}</p>
-        </div>
+    <div className="flex flex-wrap gap-2">
+      {profile.skills.map((s) => (
+        <span
+          key={s}
+          className="cursor-default rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300 transition-all duration-200 hover:-translate-y-0.5 hover:scale-105 hover:bg-blue-500/20 hover:text-blue-200 motion-reduce:transform-none"
+        >
+          {s}
+        </span>
       ))}
     </div>
-  )}
+  </div>
+)}
 
-  {profile.skills.length > 0 && (
-    <div className="mt-4 border-t border-slate-800 pt-4">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white">Skills</h3>
-        <Link
-          href="/settings"
-          className="text-xs text-blue-400 transition-colors duration-200 hover:text-blue-300"
-        >
-          Edit
-        </Link>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {profile.skills.map((s) => (
-          <span
-            key={s}
-            className="rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300"
-          >
-            {s}
-          </span>
-        ))}
-      </div>
-    </div>
-  )}
-
-  <Link
-    href="/profile"
-    className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 transition-[background-color,border-color] duration-200 hover:border-slate-600 hover:bg-slate-800"
-  >
-    View profile
-  </Link>
-</section>
-
-);
+<Link
+  href="/profile"
+  className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"
+>
+  View profile
+</Link>
+    </section>
+  );
 }
+
 
 /* ---------- my communities ---------- */
 
 async function MyCommunitiesCard() {
-const session = await getSession();
-const userId = session?.user?.id ?? null;
+  const session = await getSession();
+  const userId = session?.user?.id ?? null;
 
-if (!userId) return null;
+  if (!userId) return null;
 
-const myCommunities = await getMyCommunities(userId);
+  const myCommunities = await getMyCommunities(userId);
 
-return (
-<section className={`${card} p-4`}> <SectionHeader title="My Communities" href="/communities" />
+  return (
+    <section
+      className={`${card} p-4 transition-colors duration-300 hover:border-slate-700`}
+    >
+      <SectionHeader title="My Communities" href="/communities" />
 
-  {myCommunities.length === 0 ? (
-    <p className="text-xs text-slate-400">
-      You haven&apos;t joined any communities yet.
-    </p>
-  ) : (
-    <ul className="space-y-3">
-      {myCommunities.map((c) => (
-        <li
-          key={c.id}
-          className="flex items-center gap-3 rounded-lg transition-colors duration-200 hover:bg-slate-800/30"
-        >
-          <Logo name={c.name} src={c.logo} className="h-9 w-9 text-sm" />
-          <div className="min-w-0 flex-1">
-            <Link
-              href={`/communities/${c.slug}`}
-              className="block truncate text-sm font-medium text-white transition-colors duration-200 hover:text-blue-300"
+      {myCommunities.length === 0 ? (
+        <p className="text-xs text-slate-400">
+          You haven&apos;t joined any communities yet.
+        </p>
+      ) : (
+        <ul className="space-y-1">
+          {myCommunities.map((c) => (
+            <li
+              key={c.id}
+              className="group flex items-center gap-3 rounded-lg px-2 py-1.5 transition-all duration-200 ease-out hover:translate-x-1 hover:bg-slate-800/50 motion-reduce:transform-none"
             >
-              {c.name}
-            </Link>
-            <p className="text-[11px] text-slate-400">
-              {formatCount(c.memberCount)}{" "}
-              {c.memberCount === 1 ? "member" : "members"}
-            </p>
-          </div>
-          <JoinButton communityId={c.id} joined signedIn compact />
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
-
-);
+              <Logo name={c.name} src={c.logo} className="h-9 w-9 text-sm" />
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/communities/${c.slug}`}
+                  className="block truncate text-sm font-medium text-white transition-colors duration-200 hover:text-blue-300"
+                >
+                  {c.name}
+                </Link>
+                <p className="text-[11px] text-slate-400">
+                  {formatCount(c.memberCount)}{" "}
+                  {c.memberCount === 1 ? "member" : "members"}
+                </p>
+              </div>
+              <JoinButton communityId={c.id} joined signedIn compact />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 /* ---------- latest blogs ---------- */
 
 async function LatestBlogsList() {
-"use cache";
-cacheLife("minutes");
-cacheTag("posts");
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("posts");
 
-const blogs = await getLatestBlogs();
+  const blogs = await getLatestBlogs();
 
-if (blogs.length === 0) {
-return <p className={`${card} p-6 text-sm text-slate-400`}>No posts yet.</p>;
-}
+  if (blogs.length === 0) {
+    return <p className={`${card} p-6 text-sm text-slate-400`}>No posts yet.</p>;
+  }
 
-return (
-<div className={`${card} divide-y divide-slate-800`}>
-{blogs.map((b, i) => (
-<Reveal key={b.id} delay={i * 50}> <article className="flex flex-col gap-3 p-3 transition-colors duration-200 hover:bg-slate-800/20 sm:flex-row sm:items-center sm:gap-4">
-<Link href={`/blogs/${b.slug}`} className="block shrink-0 sm:w-[132px]">
-{b.cover ? (
-// eslint-disable-next-line @next/next/no-img-element 
-            <img
-               src={b.cover}
-               alt=""
-               loading="lazy"
-               decoding="async"
-               className="aspect-[16/9] w-full rounded-lg object-cover transition-transform duration-300 hover:scale-[1.02] sm:aspect-auto sm:h-[74px]"
-             />
-) : ( <div className="aspect-[16/9] w-full rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 sm:aspect-auto sm:h-[74px]" />
-)} </Link>
+  return (
+    <div
+      className={`${card} divide-y divide-slate-800 overflow-hidden transition-colors duration-300 hover:border-slate-700`}
+    >
+      {blogs.map((b, i) => (
+        <Reveal key={b.id} delay={i * 50}>
+          <article className="group flex flex-col gap-3 p-3 transition-all duration-300 ease-out hover:bg-slate-800/30 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              href={`/blogs/${b.slug}`}
+              className="block shrink-0 overflow-hidden rounded-lg sm:w-[132px]"
+            >
+              {b.cover ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={b.cover}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="aspect-[16/9] w-full rounded-lg object-cover transition-transform duration-500 ease-out group-hover:scale-110 sm:aspect-auto sm:h-[74px] motion-reduce:transform-none"
+                />
+              ) : (
+                <div className="aspect-[16/9] w-full rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 transition-transform duration-500 ease-out group-hover:scale-110 sm:aspect-auto sm:h-[74px] motion-reduce:transform-none" />
+              )}
+            </Link>
 
-        <div className="min-w-0 flex-1">
-          <Link href={`/blogs/${b.slug}`}>
-            <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-white transition-colors duration-200 hover:text-blue-300 sm:line-clamp-1">
-              {b.title}
-            </h3>
-          </Link>
+            <div className="min-w-0 flex-1">
+              <Link href={`/blogs/${b.slug}`}>
+                <h3 className="line-clamp-2 break-words text-sm font-semibold leading-snug text-white transition-colors duration-200 hover:text-blue-300 sm:line-clamp-1">
+                  {b.title}
+                </h3>
+              </Link>
 
-          <p className="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-400">
-            {b.excerpt}
-          </p>
+              <p className="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-400 transition-colors duration-200 group-hover:text-slate-300">
+                {b.excerpt}
+              </p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-400">
-            <Avatar
-              src={b.authorImage}
-              name={b.authorName}
-              className="h-5 w-5"
-              textClass="text-[8px]"
-            />
-            <span className="max-w-[10rem] truncate">{b.authorName}</span>
-            <span aria-hidden="true">·</span>
-            <span>{b.date}</span>
-            {b.topic && (
-              <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-blue-300">
-                {b.topic}
-              </span>
-            )}
-          </div>
-        </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-400">
+                <Avatar
+                  src={b.authorImage}
+                  name={b.authorName}
+                  className="h-5 w-5"
+                  textClass="text-[8px]"
+                />
+                <span className="max-w-[10rem] truncate">{b.authorName}</span>
+                <span aria-hidden="true">·</span>
+                <span>{b.date}</span>
+                {b.topic && (
+                  <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-blue-300 transition-all duration-200 hover:scale-105 hover:bg-blue-500/25 motion-reduce:transform-none">
+                    {b.topic}
+                  </span>
+                )}
+              </div>
+            </div>
 
-        <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
-          <Link
-            href={`/blogs/${b.slug}`}
-            className="order-1 flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-center text-xs font-medium text-slate-200 transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-800 active:translate-y-0 sm:order-2 sm:flex-none sm:py-2 motion-reduce:transform-none"
-          >
-            Read Blog
-          </Link>
+            <div className="flex items-center gap-2 sm:shrink-0 sm:gap-3">
+              <Link
+                href={`/blogs/${b.slug}`}
+                className="order-1 flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-center text-xs font-medium text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/50 hover:bg-slate-800 hover:shadow-md hover:shadow-blue-950/30 active:translate-y-0 active:scale-95 sm:order-2 sm:flex-none sm:py-2 motion-reduce:transform-none"
+              >
+                Read Blog
+              </Link>
 
-          <div className="order-2 sm:order-1">
-            <BookmarkButton
-              post={{
-                id: b.id,
-                title: b.title,
-                href: `/blogs/${b.slug}`,
-              }}
-            />
-          </div>
-        </div>
-      </article>
-    </Reveal>
-  ))}
-</div>
-
-);
+              <div className="order-2 transition-transform duration-200 hover:scale-110 active:scale-95 sm:order-1 motion-reduce:transform-none">
+                <BookmarkButton
+                  post={{
+                    id: b.id,
+                    title: b.title,
+                    href: `/blogs/${b.slug}`,
+                  }}
+                />
+              </div>
+            </div>
+          </article>
+        </Reveal>
+      ))}
+    </div>
+  );
 }
 
 /* ---------- trending topics ---------- */
 
 async function TrendingList() {
-"use cache";
-cacheLife("minutes");
-cacheTag("posts");
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("posts");
 
-const trending = await getTrendingTopics();
+  const trending = await getTrendingTopics();
 
-if (trending.length === 0) {
-return ( <p className="text-xs text-slate-400">
-Topics will appear as people post. </p>
-);
-}
+  if (trending.length === 0) {
+    return (
+      <p className="text-xs text-slate-400">
+        Topics will appear as people post.
+      </p>
+    );
+  }
 
-return ( <ol className="space-y-1">
-{trending.map((t, i) => ( <li key={t.topic}>
-<Link
-href={`/blogs?topic=${encodeURIComponent(t.topic)}`}
-className="flex items-center gap-3 rounded-md px-1 py-2 text-sm transition-[background-color,transform] duration-200 hover:translate-x-1 hover:bg-slate-800/50 motion-reduce:transform-none"
-> <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-800 text-[11px] text-slate-300">
-{i + 1} </span> <span className="flex-1 text-slate-200">{t.topic}</span> <span className="text-xs text-slate-400">
-{formatCount(t.posts)} {t.posts === 1 ? "post" : "posts"} </span> </Link> </li>
-))} </ol>
-);
+  return (
+    <ol className="space-y-1">
+      {trending.map((t, i) => (
+        <li key={t.topic}>
+          <Link
+            href={`/blogs?topic=${encodeURIComponent(t.topic)}`}
+            className="group flex items-center gap-3 rounded-md px-1 py-2 text-sm transition-all duration-200 ease-out hover:translate-x-1.5 hover:bg-slate-800/60 active:scale-[0.98] motion-reduce:transform-none"
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-800 text-[11px] text-slate-300 transition-all duration-200 group-hover:scale-110 group-hover:bg-blue-500/25 group-hover:text-blue-200 motion-reduce:transform-none">
+              {i + 1}
+            </span>
+            <span className="flex-1 text-slate-200 transition-colors duration-200 group-hover:text-white">
+              {t.topic}
+            </span>
+            <span className="text-xs text-slate-400 transition-colors duration-200 group-hover:text-slate-300">
+              {formatCount(t.posts)} {t.posts === 1 ? "post" : "posts"}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 /* ---------- homepage ---------- */
 
 export default function Home() {
-return ( <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-{/* CENTER */} <div className="min-w-0 space-y-6"> <Reveal>
-<section
-className={`${card} relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-5 py-6 sm:px-8 sm:py-8`}
-> <p className="mb-2 text-[11px] font-semibold tracking-[0.2em] text-blue-400">
-BUILD • SHARE • LEARN </p>
-
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-          Explore developer communities
-        </h1>
-
-        <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
-          Join communities, read insightful blogs, share your knowledge and
-          grow with developers around the world.
-        </p>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/communities"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-950/30 active:translate-y-0 motion-reduce:transform-none"
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      {/* CENTER */}
+      <div className="min-w-0 space-y-6">
+        <Reveal>
+          <section
+            className={`${card} group/hero relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-5 py-6 transition-all duration-500 ease-out hover:border-slate-700 hover:shadow-xl hover:shadow-blue-950/30 sm:px-8 sm:py-8`}
           >
-            Browse Communities
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
+            <p className="mb-2 text-[11px] font-semibold tracking-[0.2em] text-blue-400 transition-all duration-500 group-hover/hero:tracking-[0.3em]">
+              BUILD • SHARE • LEARN
+            </p>
 
-          <Link
-            href="/create"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/60 px-5 py-2.5 text-sm font-semibold text-white transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-800 active:translate-y-0 motion-reduce:transform-none"
-          >
-            <PenSquare className="h-4 w-4" />
-            Create a Post
-          </Link>
-        </div>
-      </section>
-    </Reveal>
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Explore developer communities
+            </h1>
 
-    <section>
-      <SectionHeader title="Featured Communities" href="/communities" />
-      <Suspense fallback={<FeaturedSkeleton />}>
-        <FeaturedCommunitiesList />
-      </Suspense>
-    </section>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
+              Join communities, read insightful blogs, share your knowledge and
+              grow with developers around the world.
+            </p>
 
-    <section>
-      <SectionHeader title="Latest Blogs" href="/blogs" />
-      <Suspense fallback={<BlogsSkeleton />}>
-        <LatestBlogsList />
-      </Suspense>
-    </section>
-  </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/communities"
+                className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-950/40 active:translate-y-0 active:scale-95 motion-reduce:transform-none"
+              >
+                Browse Communities
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1.5 motion-reduce:transform-none" />
+              </Link>
 
-  {/* RIGHT SIDEBAR */}
-  <aside className="min-w-0 space-y-4">
-    <Suspense fallback={<SideCardSkeleton rows={4} />}>
-      <Reveal>
-        <ProfileCard />
-      </Reveal>
-    </Suspense>
+              <Link
+                href="/create"
+                className="group inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/60 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:translate-y-0 active:scale-95 motion-reduce:transform-none"
+              >
+                <PenSquare className="h-4 w-4 transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 motion-reduce:transform-none" />
+                Create a Post
+              </Link>
+            </div>
+          </section>
+        </Reveal>
 
-    <Suspense fallback={<SideCardSkeleton rows={3} />}>
-      <Reveal delay={80}>
-        <MyCommunitiesCard />
-      </Reveal>
-    </Suspense>
+        <section>
+          <SectionHeader title="Featured Communities" href="/communities" />
+          <Suspense fallback={<FeaturedSkeleton />}>
+            <FeaturedCommunitiesList />
+          </Suspense>
+        </section>
 
-    <Reveal delay={120}>
-      <section className={`${card} p-4`}>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-            <Flame className="h-4 w-4 text-orange-400" />
-            Trending Topics
-          </h2>
-          <Link
-            href="/blogs"
-            className="flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors duration-200 hover:text-blue-300"
-          >
-            View all
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
+        <section>
+          <SectionHeader title="Latest Blogs" href="/blogs" />
+          <Suspense fallback={<BlogsSkeleton />}>
+            <LatestBlogsList />
+          </Suspense>
+        </section>
+      </div>
 
-        <Suspense fallback={<Pulse className="h-40 w-full" />}>
-          <TrendingList />
+      {/* RIGHT SIDEBAR */}
+      <aside className="min-w-0 space-y-4">
+        <Suspense fallback={<SideCardSkeleton rows={4} />}>
+          <Reveal>
+            <ProfileCard />
+          </Reveal>
         </Suspense>
-      </section>
-    </Reveal>
-  </aside>
-</div>
 
-);
+        <Suspense fallback={<SideCardSkeleton rows={3} />}>
+          <Reveal delay={80}>
+            <MyCommunitiesCard />
+          </Reveal>
+        </Suspense>
+
+        <Reveal delay={120}>
+          <section
+            className={`${card} p-4 transition-colors duration-300 hover:border-slate-700`}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="group flex items-center gap-2 text-lg font-bold text-white">
+                <Flame className="h-4 w-4 text-orange-400 transition-transform duration-300 hover:scale-125 hover:-rotate-12 motion-reduce:transform-none" />
+                Trending Topics
+              </h2>
+              <Link
+                href="/blogs"
+                className="group flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors duration-200 hover:text-blue-300"
+              >
+                View all
+                <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transform-none" />
+              </Link>
+            </div>
+
+            <Suspense fallback={<Pulse className="h-40 w-full" />}>
+              <TrendingList />
+            </Suspense>
+          </section>
+        </Reveal>
+      </aside>
+    </div>
+  );
 }

@@ -62,4 +62,3 @@ export async function getCommunityBySlug(
     joined: userId ? members.includes(userId) : false,
   };
 }
-

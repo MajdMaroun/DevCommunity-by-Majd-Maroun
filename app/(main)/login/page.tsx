@@ -73,38 +73,38 @@ export default function LoginPage() {
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-gray-950">
       {/* Background glow */}
-      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-purple-600/20 blur-3xl" />
+      <div className="pointer-events-none absolute -left-32 -top-32 h-72 w-72 animate-pulse rounded-full bg-indigo-600/20 blur-3xl sm:h-96 sm:w-96 motion-reduce:animate-none" />
+      <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 animate-pulse rounded-full bg-purple-600/20 blur-3xl [animation-delay:1.5s] sm:h-96 sm:w-96 motion-reduce:animate-none" />
 
       {/* Left: branding (desktop only) */}
       <section className="relative hidden w-1/2 flex-col justify-between border-r border-gray-800 p-12 lg:flex">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500">
+        <div className="group flex animate-[fadeInDown_0.6s_ease-out_both] items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500 transition-all duration-300 group-hover:rotate-[-8deg] group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-indigo-500/40 motion-reduce:transform-none">
             <Code2 size={22} className="text-white" />
           </div>
           <span className="text-xl font-bold text-white">DevCommunity</span>
         </div>
 
         <div className="max-w-md">
-          <h2 className="text-4xl font-bold leading-tight text-white">
+          <h2 className="animate-[fadeInUp_0.7s_ease-out_0.1s_both] text-4xl font-bold leading-tight text-white">
             Where developers{" "}
             <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               learn, share and grow
             </span>
           </h2>
-          <p className="mt-4 text-gray-400">
+          <p className="mt-4 animate-[fadeInUp_0.7s_ease-out_0.2s_both] text-gray-400">
             Join communities, read great blogs, and connect with people who build things.
           </p>
 
           <div className="mt-8 space-y-4">
-            <div className="flex items-center gap-3 text-gray-300">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 ring-1 ring-gray-800">
+            <div className="group flex animate-[fadeInUp_0.7s_ease-out_0.3s_both] cursor-default items-center gap-3 text-gray-300 transition-all duration-300 hover:translate-x-2 hover:text-white motion-reduce:transform-none">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 ring-1 ring-gray-800 transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-500/10 group-hover:ring-indigo-500/40 motion-reduce:transform-none">
                 <Users size={18} className="text-indigo-400" />
               </div>
               <span className="text-sm">Join communities around your stack</span>
             </div>
-            <div className="flex items-center gap-3 text-gray-300">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 ring-1 ring-gray-800">
+            <div className="group flex animate-[fadeInUp_0.7s_ease-out_0.4s_both] cursor-default items-center gap-3 text-gray-300 transition-all duration-300 hover:translate-x-2 hover:text-white motion-reduce:transform-none">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 ring-1 ring-gray-800 transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-500/10 group-hover:ring-indigo-500/40 motion-reduce:transform-none">
                 <BookOpen size={18} className="text-indigo-400" />
               </div>
               <span className="text-sm">Bookmark posts to read later</span>
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
       {/* Right: form */}
       <section className="relative flex w-full items-center justify-center px-4 py-12 lg:w-1/2">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-[popIn_0.6s_cubic-bezier(0.16,1,0.3,1)_both]">
           {/* Mobile logo */}
           <div className="mb-8 flex items-center justify-center gap-2 lg:hidden">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500">
@@ -126,19 +126,19 @@ export default function LoginPage() {
             <span className="text-xl font-bold text-white">DevCommunity</span>
           </div>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-8 shadow-2xl backdrop-blur">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-5 shadow-2xl backdrop-blur transition-all duration-500 hover:border-gray-700 hover:shadow-indigo-950/30 sm:p-8">
             <h1 className="text-2xl font-bold text-white">Welcome back</h1>
             <p className="mb-6 mt-1 text-sm text-gray-400">
               Log in to continue to your account
             </p>
 
             {/* Social logins */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
               <button
                 type="button"
                 onClick={() => handleSocial("google")}
                 disabled={socialLoading !== null}
-                className="flex items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-950 py-2.5 text-sm font-medium text-white transition hover:border-gray-600 hover:bg-gray-800 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-950 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:bg-gray-800 hover:shadow-lg hover:shadow-black/30 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transform-none"
               >
                 {socialLoading === "google" ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -151,7 +151,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => handleSocial("github")}
                 disabled={socialLoading !== null}
-                className="flex items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-950 py-2.5 text-sm font-medium text-white transition hover:border-gray-600 hover:bg-gray-800 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-950 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:bg-gray-800 hover:shadow-lg hover:shadow-black/30 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transform-none"
               >
                 {socialLoading === "github" ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -165,7 +165,7 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="my-6 flex items-center gap-3">
               <div className="h-px flex-1 bg-gray-800" />
-              <span className="text-xs uppercase tracking-wide text-gray-500">
+              <span className="text-center text-xs uppercase tracking-wide text-gray-500">
                 or continue with email
               </span>
               <div className="h-px flex-1 bg-gray-800" />
@@ -173,12 +173,12 @@ export default function LoginPage() {
 
             {/* Email / password */}
             <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-300">
+              <div className="group">
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-300 transition-colors duration-200 group-focus-within:text-indigo-300">
                   Email
                 </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 transition-colors duration-200 group-focus-within:text-indigo-400" />
                   <input
                     id="email"
                     type="email"
@@ -187,17 +187,17 @@ export default function LoginPage() {
                     required
                     autoComplete="email"
                     placeholder="you@example.com"
-                    className="w-full rounded-lg border border-gray-700 bg-gray-950 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-gray-600 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-950 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-gray-600 outline-none transition-all duration-200 hover:border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                   />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-300">
+              <div className="group">
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-300 transition-colors duration-200 group-focus-within:text-indigo-300">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 transition-colors duration-200 group-focus-within:text-indigo-400" />
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -206,13 +206,13 @@ export default function LoginPage() {
                     required
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="w-full rounded-lg border border-gray-700 bg-gray-950 py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-gray-600 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-950 py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-gray-600 outline-none transition-all duration-200 hover:border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition-all duration-200 hover:scale-110 hover:text-gray-300 active:scale-90 motion-reduce:transform-none"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -220,7 +220,7 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                <div className="animate-[shake_0.4s_ease-in-out] rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400 motion-reduce:animate-none">
                   {error}
                 </div>
               )}
@@ -228,7 +228,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-400 hover:shadow-xl hover:shadow-indigo-500/40 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transform-none"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
                 {loading ? "Logging in..." : "Log in"}
@@ -240,7 +240,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => router.push("/register")}
-                className="font-medium text-indigo-400 hover:text-indigo-300"
+                className="font-medium text-indigo-400 transition-colors duration-200 hover:text-indigo-300 hover:underline"
               >
                 Register
               </button>
@@ -248,6 +248,59 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+
+      <style jsx global>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes popIn {
+          from {
+            opacity: 0;
+            transform: scale(0.94) translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          20%,
+          60% {
+            transform: translateX(-6px);
+          }
+          40%,
+          80% {
+            transform: translateX(6px);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [class*="animate-[fadeIn"],
+          [class*="animate-[popIn"] {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </main>
   );
 }
