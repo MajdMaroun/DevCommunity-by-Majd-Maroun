@@ -4,11 +4,13 @@ import { cacheLife, cacheTag } from "next/cache";
 import BookmarkButton from "@/components/BookmarkButton";
 import Reveal from "@/components/Reveal";
 import {
+  ArrowBigRight,
   ArrowRight,
   Calendar,
   Flame,
   MapPin,
-  PenSquare,
+  Pencil,
+  Sparkles,
   Users,
 } from "lucide-react";
 import JoinButton from "@/components/JoinButton";
@@ -21,6 +23,7 @@ import {
 } from "@/lib/queries/home";
 import { getTrendingTopics, getLatestBlogs } from "@/lib/queries/post";
 import { getFollowerCount } from "@/lib/queries/follow";
+import HeroMembers from "@/components/HeroMembers";
 
 /* ---------- helpers ---------- */
 
@@ -102,10 +105,25 @@ function Avatar({
   );
 }
 
-function SectionHeader({ title, href }: { title: string; href: string }) {
+function SectionHeader({
+  title,
+  href,
+  eyebrow,
+}: {
+  title: string;
+  href: string;
+  eyebrow?: string;
+}) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-lg font-bold text-white">{title}</h2>
+    <div className="mb-3 flex items-end justify-between">
+      <div>
+        {eyebrow && (
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-indigo-300">
+            {eyebrow}
+          </p>
+        )}
+        <h2 className="text-lg font-bold text-white">{title}</h2>
+      </div>
       <Link
         href={href}
         className="group flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors duration-200 hover:text-blue-300"
@@ -120,6 +138,61 @@ function SectionHeader({ title, href }: { title: string; href: string }) {
 const card = "rounded-xl border border-slate-800 bg-[#0f1629]";
 const chip =
   "rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-300 transition-[background-color,color,transform] duration-200 hover:scale-105 hover:bg-blue-500/20 hover:text-blue-200 motion-reduce:transform-none";
+
+function HeroVisual() {
+  return (
+    <div className="relative mx-auto hidden aspect-[4/5] w-full max-w-[340px] lg:block" aria-hidden="true">
+      <div className="absolute -inset-4 rounded-3xl bg-indigo-500/20 blur-2xl" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/hero.png"
+        alt=""
+        className="absolute inset-0 h-full w-full rounded-2xl border border-white/[0.08] object-cover shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
+      />
+      {/* community card */}
+      <div className="absolute left-0 top-2 w-[78%] rounded-2xl border border-white/[0.08] bg-[#14172a]/90 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/20 text-sm font-bold text-indigo-200">
+            R
+          </div>
+          <div className="min-w-0">
+            <div className="h-2.5 w-24 rounded bg-white/20" />
+            <div className="mt-1.5 h-2 w-16 rounded bg-white/10" />
+          </div>
+        </div>
+        <div className="mt-3 space-y-1.5">
+          <div className="h-2 w-full rounded bg-white/10" />
+          <div className="h-2 w-4/5 rounded bg-white/10" />
+        </div>
+        <div className="mt-3 flex gap-1.5">
+          <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[10px] text-indigo-200">
+            #react
+          </span>
+          <span className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[10px] text-sky-200">
+            #nextjs
+          </span>
+        </div>
+      </div>
+
+      {/* post card */}
+      <div className="absolute bottom-3 right-0 w-[80%] rounded-2xl border border-white/[0.08] bg-[#181b30]/95 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur">
+        <div className="mb-3 aspect-[16/7] w-full rounded-lg bg-gradient-to-br from-indigo-500/40 via-violet-500/30 to-sky-400/30" />
+        <div className="h-2.5 w-3/4 rounded bg-white/25" />
+        <div className="mt-2 h-2 w-full rounded bg-white/10" />
+        <div className="mt-3 flex items-center gap-2">
+          <span className="h-5 w-5 rounded-full bg-violet-500" />
+          <div className="h-2 w-20 rounded bg-white/15" />
+        </div>
+      </div>
+
+      {/* floating badge */}
+      <div className="absolute right-4 top-0 flex items-center gap-1.5 rounded-full border border-indigo-300/20 bg-indigo-500/20 px-3 py-1.5 text-[10px] font-semibold text-indigo-100 backdrop-blur">
+        <Users className="h-3 w-3" />
+        Growing daily
+      </div>
+    </div>
+  );
+}
 
 /* ---------- loading skeletons ---------- */
 
@@ -271,12 +344,12 @@ async function ProfileCard() {
 
   const profile = dbProfile
     ? {
-        ...dbProfile,
-        image: dbProfile.image || undefined,
-        stats: withLiveFollowers(dbProfile.stats),
-      }
+      ...dbProfile,
+      image: dbProfile.image || undefined,
+      stats: withLiveFollowers(dbProfile.stats),
+    }
     : session?.user
-    ? {
+      ? {
         name: session.user.name ?? session.user.email ?? "User",
         image: session.user.image ?? undefined,
         title: "Developer",
@@ -286,7 +359,7 @@ async function ProfileCard() {
         stats: [] as { label: string; value: string | number }[],
         skills: [] as string[],
       }
-    : null;
+      : null;
 
   if (!profile) {
     return (
@@ -312,101 +385,100 @@ async function ProfileCard() {
     <section
       className={`${card} group/profile p-5 transition-all duration-300 ease-out hover:border-slate-700 hover:shadow-lg hover:shadow-blue-950/20`}
     >
-<div className="flex items-center gap-3">
-  <Link href="/profile" title="View profile">
-    <Avatar
-      src={profile.image}
-      name={profile.name}
-      className="h-14 w-14 cursor-pointer transition-opacity hover:opacity-80"
-      textClass="text-xl"
-    />
-  </Link>
+      <div className="flex items-center gap-3">
+        <Link href="/profile" title="View profile">
+          <Avatar
+            src={profile.image}
+            name={profile.name}
+            className="h-14 w-14 cursor-pointer transition-opacity hover:opacity-80"
+            textClass="text-xl"
+          />
+        </Link>
 
-  <div className="min-w-0">
-    <h2 className="truncate font-semibold text-white">
-      {profile.name}
-    </h2>
-    <p className="truncate text-xs text-slate-400">
-      {profile.title || "Developer"}
-    </p>
-  </div>
-</div>
-
-{profile.bio && (
-  <p className="mt-4 text-xs leading-relaxed text-slate-300">
-    {profile.bio}
-  </p>
-)}
-
-{(profile.location || profile.joined) && (
-  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-    {profile.location && (
-      <span className="group flex items-center gap-1.5 transition-colors duration-200 hover:text-slate-200">
-        <MapPin className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-blue-400 motion-reduce:transform-none" />
-        {profile.location}
-      </span>
-    )}
-
-    {profile.joined && (
-      <span className="group flex items-center gap-1.5 transition-colors duration-200 hover:text-slate-200">
-        <Calendar className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-blue-400 motion-reduce:transform-none" />
-        Joined {profile.joined}
-      </span>
-    )}
-  </div>
-)}
-
-{profile.stats.length > 0 && (
-  <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
-    {profile.stats.map((s) => (
-      <div
-        key={s.label}
-        className="group cursor-default transition-transform duration-200 hover:scale-110 motion-reduce:transform-none"
-      >
-        <p className="text-lg font-bold text-white transition-colors duration-200 group-hover:text-blue-300">
-          {s.value}
-        </p>
-        <p className="text-[11px] text-slate-400">{s.label}</p>
+        <div className="min-w-0">
+          <h2 className="truncate font-semibold text-white">
+            {profile.name}
+          </h2>
+          <p className="truncate text-xs text-slate-400">
+            {profile.title || "Developer"}
+          </p>
+        </div>
       </div>
-    ))}
-  </div>
-)}
 
-{profile.skills.length > 0 && (
-  <div className="mt-4 border-t border-slate-800 pt-4">
-    <div className="mb-2 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-white">Skills</h3>
+      {profile.bio && (
+        <p className="mt-4 text-xs leading-relaxed text-slate-300">
+          {profile.bio}
+        </p>
+      )}
+
+      {(profile.location || profile.joined) && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          {profile.location && (
+            <span className="group flex items-center gap-1.5 transition-colors duration-200 hover:text-slate-200">
+              <MapPin className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-blue-400 motion-reduce:transform-none" />
+              {profile.location}
+            </span>
+          )}
+
+          {profile.joined && (
+            <span className="group flex items-center gap-1.5 transition-colors duration-200 hover:text-slate-200">
+              <Calendar className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:text-blue-400 motion-reduce:transform-none" />
+              Joined {profile.joined}
+            </span>
+          )}
+        </div>
+      )}
+
+      {profile.stats.length > 0 && (
+        <div className="mt-4 grid grid-cols-3 divide-x divide-slate-800 border-t border-slate-800 pt-4 text-center">
+          {profile.stats.map((s) => (
+            <div
+              key={s.label}
+              className="group cursor-default transition-transform duration-200 hover:scale-110 motion-reduce:transform-none"
+            >
+              <p className="text-lg font-bold text-white transition-colors duration-200 group-hover:text-blue-300">
+                {s.value}
+              </p>
+              <p className="text-[11px] text-slate-400">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {profile.skills.length > 0 && (
+        <div className="mt-4 border-t border-slate-800 pt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-white">Skills</h3>
+            <Link
+              href="/settings"
+              className="text-xs text-blue-400 transition-colors duration-200 hover:text-blue-300"
+            >
+              Edit
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.map((s) => (
+              <span
+                key={s}
+                className="cursor-default rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300 transition-all duration-200 hover:-translate-y-0.5 hover:scale-105 hover:bg-blue-500/20 hover:text-blue-200 motion-reduce:transform-none"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Link
-        href="/settings"
-        className="text-xs text-blue-400 transition-colors duration-200 hover:text-blue-300"
+        href="/profile"
+        className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"
       >
-        Edit
+        View profile
       </Link>
-    </div>
-
-    <div className="flex flex-wrap gap-2">
-      {profile.skills.map((s) => (
-        <span
-          key={s}
-          className="cursor-default rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-300 transition-all duration-200 hover:-translate-y-0.5 hover:scale-105 hover:bg-blue-500/20 hover:text-blue-200 motion-reduce:transform-none"
-        >
-          {s}
-        </span>
-      ))}
-    </div>
-  </div>
-)}
-
-<Link
-  href="/profile"
-  className="mt-4 block rounded-lg border border-slate-700 py-2 text-center text-xs font-medium text-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"
->
-  View profile
-</Link>
     </section>
   );
 }
-
 
 /* ---------- my communities ---------- */
 
@@ -594,98 +666,142 @@ async function TrendingList() {
 
 export default function Home() {
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-      {/* CENTER */}
-      <div className="min-w-0 space-y-6">
+    <div className="mx-auto grid w-full max-w-[1500px] min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:gap-8">
+      <div className="min-w-0 space-y-8">
         <Reveal>
-          <section
-            className={`${card} group/hero relative overflow-hidden bg-[radial-gradient(ellipse_at_85%_40%,rgba(59,130,246,0.18),transparent_60%)] px-5 py-6 transition-all duration-500 ease-out hover:border-slate-700 hover:shadow-xl hover:shadow-blue-950/30 sm:px-8 sm:py-8`}
-          >
-            <p className="mb-2 text-[11px] font-semibold tracking-[0.2em] text-blue-400 transition-all duration-500 group-hover/hero:tracking-[0.3em]">
-              BUILD • SHARE • LEARN
-            </p>
+          <section className={`${card} relative isolate overflow-hidden`}>
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_76%_42%,rgba(99,102,241,0.16),transparent_48%)]" />
+            <div className="pointer-events-none absolute -left-24 -top-28 -z-10 h-72 w-72 rounded-full bg-violet-500/[0.06] blur-3xl" />
 
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Explore developer communities
-            </h1>
+            <div className="grid items-center gap-6 px-6 py-8 sm:px-9 sm:py-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
+              <div className="max-w-2xl">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-300/15 bg-indigo-400/[0.07] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-indigo-200">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Build · share · learn
+                </div>
 
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
-              Join communities, read insightful blogs, share your knowledge and
-              grow with developers around the world.
-            </p>
+                <h1 className="max-w-xl text-[2.25rem] font-semibold leading-[1.08] tracking-[-0.045em] text-[#f4f5f7] sm:text-5xl">
+                  Find your people.
+                  <br />
+                  <span className="bg-gradient-to-r from-indigo-200 via-violet-300 to-sky-200 bg-clip-text text-transparent">
+                    Build something great.
+                  </span>
+                </h1>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/communities"
-                className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-950/40 active:translate-y-0 active:scale-95 motion-reduce:transform-none"
-              >
-                Browse Communities
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1.5 motion-reduce:transform-none" />
-              </Link>
+                <p className="mt-5 max-w-lg text-sm leading-7 text-[#a1a4af] sm:text-[15px]">
+                  A home for curious developers. Explore communities, trade
+                  ideas, and learn from people who build what you love.
+                </p>
 
-              <Link
-                href="/create"
-                className="group inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/60 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:translate-y-0 active:scale-95 motion-reduce:transform-none"
-              >
-                <PenSquare className="h-4 w-4 transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 motion-reduce:transform-none" />
-                Create a Post
-              </Link>
+               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+  <Link
+    href="/communities"
+    className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-b from-indigo-400 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_30px_-6px_rgba(99,102,241,0.55),inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-inset ring-white/10 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-6px_rgba(99,102,241,0.7),inset_0_1px_0_rgba(255,255,255,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1629] active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"
+  >
+    {/* shine sweep on hover */}
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[300%] motion-reduce:hidden"
+    />
+    <span className="relative">Explore communities</span>
+    <ArrowBigRight className="relative h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transform-none" />
+  </Link>
+
+  <Link
+    href="/create"
+    className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-slate-100 backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:border-indigo-300/30 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1629] active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"
+  >
+    <Pencil className="h-4 w-4 text-indigo-300 transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110 motion-reduce:transform-none" />
+    Write a post
+  </Link>
+</div>
+
+               <div className="mt-7 flex items-center gap-3 text-xs text-[#9296a3]">
+ <div className="mt-7 flex items-center gap-3 text-xs text-[#9296a3]">
+  <HeroMembers />
+  <span>A community shaped by developers, for developers.</span>
+</div>
+</div>
+
+              </div>
+              <HeroVisual />
             </div>
           </section>
         </Reveal>
 
         <section>
-          <SectionHeader title="Featured Communities" href="/communities" />
+          <SectionHeader
+            eyebrow="Find your corner"
+            title="Featured communities"
+            href="/communities"
+          />
           <Suspense fallback={<FeaturedSkeleton />}>
             <FeaturedCommunitiesList />
           </Suspense>
         </section>
 
         <section>
-          <SectionHeader title="Latest Blogs" href="/blogs" />
+          <SectionHeader
+            eyebrow="Fresh from the community"
+            title="Latest articles"
+            href="/blogs"
+          />
           <Suspense fallback={<BlogsSkeleton />}>
             <LatestBlogsList />
           </Suspense>
         </section>
       </div>
 
-      {/* RIGHT SIDEBAR */}
-      <aside className="min-w-0 space-y-4">
-        <Suspense fallback={<SideCardSkeleton rows={4} />}>
+      <aside className="min-w-0 space-y-4 xl:sticky xl:top-6 xl:self-start">
+        <Suspense fallback={<SideCardSkeleton rows={3} />}>
           <Reveal>
             <ProfileCard />
           </Reveal>
         </Suspense>
 
         <Suspense fallback={<SideCardSkeleton rows={3} />}>
-          <Reveal delay={80}>
+          <Reveal delay={70}>
             <MyCommunitiesCard />
           </Reveal>
         </Suspense>
 
-        <Reveal delay={120}>
-          <section
-            className={`${card} p-4 transition-colors duration-300 hover:border-slate-700`}
-          >
+        <Reveal delay={110}>
+          <section className={`${card} p-5`}>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="group flex items-center gap-2 text-lg font-bold text-white">
-                <Flame className="h-4 w-4 text-orange-400 transition-transform duration-300 hover:scale-125 hover:-rotate-12 motion-reduce:transform-none" />
-                Trending Topics
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-[#f0f1f4]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-400/10 text-orange-300">
+                  <Flame className="h-4 w-4" />
+                </span>
+                Trending topics
               </h2>
               <Link
                 href="/blogs"
-                className="group flex items-center gap-1 text-xs font-medium text-blue-400 transition-colors duration-200 hover:text-blue-300"
+                aria-label="View all blog topics"
+                className="rounded-lg p-1.5 text-[#777b88] transition hover:bg-white/[0.06] hover:text-white"
               >
-                View all
-                <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transform-none" />
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
-            <Suspense fallback={<Pulse className="h-40 w-full" />}>
+            <Suspense fallback={<Pulse className="h-36 w-full" />}>
               <TrendingList />
             </Suspense>
           </section>
         </Reveal>
+
+        <div className="px-1 pt-1 text-[10px] leading-5 text-[#696d79]">
+          <Link href="/communities" className="transition hover:text-[#b6b8c1]">
+            Communities
+          </Link>
+          <span className="px-2">·</span>
+          <Link href="/blogs" className="transition hover:text-[#b6b8c1]">
+            Articles
+          </Link>
+          <span className="px-2">·</span>
+          <Link href="/create" className="transition hover:text-[#b6b8c1]">
+            Write
+          </Link>
+        </div>
       </aside>
     </div>
   );

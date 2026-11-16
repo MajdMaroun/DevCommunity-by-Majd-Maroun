@@ -2,58 +2,86 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Link2, Mail, Send, Share2 } from "lucide-react";
+import { Check, Link2, Mail, Share2 } from "lucide-react";
+
+import {
+  siWhatsapp,
+  siInstagram,
+  siFacebook,
+  siX,
+  siTelegram,
+} from "simple-icons";
+
+import type { SimpleIcon } from "simple-icons";
 
 type Props = {
   path: string;
   title: string;
 };
 
-function Svg({ children }: { children: React.ReactNode }) {
+// Reusable brand SVG
+function BrandIcon({ icon }: { icon: SimpleIcon }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
       className="h-[18px] w-[18px]"
+      fill="currentColor"
+      aria-hidden="true"
     >
-      {children}
+      <path d={icon.path} />
     </svg>
   );
 }
 
-const WhatsAppIcon = () => (
-  <Svg>
-    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
-    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
-  </Svg>
-);
-
-const XIcon = () => (
-  <Svg>
-    <path d="M4 4l16 16" />
-    <path d="M20 4L4 20" />
-  </Svg>
-);
-
+// LinkedIn official logo
 const LinkedInIcon = () => (
-  <Svg>
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />
-    <rect x="2" y="9" width="4" height="12" />
-    <circle cx="4" cy="4" r="2" />
-  </Svg>
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="h-[18px] w-[18px]"
+    aria-hidden="true"
+  >
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.35V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+  </svg>
 );
 
-const FacebookIcon = () => (
-  <Svg>
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-  </Svg>
+const GmailIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    className="h-[18px] w-[18px]"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M3 6.5L12 13l9-6.5"
+      stroke="#EA4335"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3 6.5V18"
+      stroke="#4285F4"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M21 6.5V18"
+      stroke="#34A853"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M3 6.5L12 13l9-6.5"
+      stroke="#FBBC04"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
 );
 
+// Fallback copy function
 function legacyCopy(text: string) {
   const area = document.createElement("textarea");
 
@@ -94,26 +122,23 @@ export default function ShareButton({ path, title }: Props) {
     const rect = button.getBoundingClientRect();
 
     const menuWidth = 256;
-    const menuHeight = 390;
+    const menuHeight = 430;
     const spacing = 8;
     const padding = 16;
 
     let left = rect.left;
 
-    // Prevent horizontal overflow
     left = Math.max(
       padding,
       Math.min(left, window.innerWidth - menuWidth - padding)
     );
 
-    // Open above if there isn't enough room below
     let top = rect.bottom + spacing;
 
     if (top + menuHeight > window.innerHeight - padding) {
       top = rect.top - menuHeight - spacing;
     }
 
-    // Keep inside viewport
     top = Math.max(
       padding,
       Math.min(top, window.innerHeight - menuHeight - padding)
@@ -160,6 +185,7 @@ export default function ShareButton({ path, title }: Props) {
     };
   }, [open]);
 
+  // Share button
   async function onShareClick() {
     if (open) {
       setOpen(false);
@@ -168,7 +194,6 @@ export default function ShareButton({ path, title }: Props) {
 
     const fullUrl = `${window.location.origin}${path}`;
 
-    // Native sharing on mobile devices
     const isTouchDevice = window.matchMedia(
       "(pointer: coarse)"
     ).matches;
@@ -192,6 +217,7 @@ export default function ShareButton({ path, title }: Props) {
     setOpen(true);
   }
 
+  // Copy link
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(url);
@@ -209,33 +235,45 @@ export default function ShareButton({ path, title }: Props) {
   const text = encodeURIComponent(title);
   const link = encodeURIComponent(url);
 
+  // Social sharing options
   const options = [
     {
       label: "WhatsApp",
       href: `https://wa.me/?text=${encodeURIComponent(
         `${title} ${url}`
       )}`,
-      icon: <WhatsAppIcon />,
+      icon: <BrandIcon icon={siWhatsapp} />,
+      color: "#25D366",
+    },
+    {
+      label: "Instagram",
+      href: "https://www.instagram.com/",
+      icon: <BrandIcon icon={siInstagram} />,
+      color: "#E4405F",
+    },
+    {
+      label: "Facebook",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${link}`,
+      icon: <BrandIcon icon={siFacebook} />,
+      color: "#0866FF",
     },
     {
       label: "X",
       href: `https://twitter.com/intent/tweet?text=${text}&url=${link}`,
-      icon: <XIcon />,
+      icon: <BrandIcon icon={siX} />,
+      color: "#FFFFFF",
     },
     {
       label: "LinkedIn",
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${link}`,
       icon: <LinkedInIcon />,
-    },
-    {
-      label: "Facebook",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${link}`,
-      icon: <FacebookIcon />,
+      color: "#0A66C2",
     },
     {
       label: "Telegram",
       href: `https://t.me/share/url?url=${link}&text=${text}`,
-      icon: <Send className="h-[18px] w-[18px]" />,
+      icon: <BrandIcon icon={siTelegram} />,
+      color: "#26A5E4",
     },
     {
       label: "Email",
@@ -243,6 +281,7 @@ export default function ShareButton({ path, title }: Props) {
         `I thought you might like this post: ${url}`
       )}`,
       icon: <Mail className="h-[18px] w-[18px]" />,
+      color: "#CBD5E1",
     },
   ];
 
@@ -250,7 +289,7 @@ export default function ShareButton({ path, title }: Props) {
     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-900";
 
   const iconBox =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-slate-300 ring-1 ring-slate-800";
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 ring-1 ring-slate-800";
 
   return (
     <div className="relative" ref={ref}>
@@ -294,7 +333,7 @@ export default function ShareButton({ path, title }: Props) {
               onClick={copyLink}
               className={row}
             >
-              <span className={iconBox}>
+              <span className={`${iconBox} text-slate-300`}>
                 {copied ? (
                   <Check className="h-[18px] w-[18px] text-green-400" />
                 ) : (
@@ -321,7 +360,10 @@ export default function ShareButton({ path, title }: Props) {
                 onClick={() => setOpen(false)}
                 className={row}
               >
-                <span className={iconBox}>
+                <span
+                  className={iconBox}
+                  style={{ color: option.color }}
+                >
                   {option.icon}
                 </span>
 

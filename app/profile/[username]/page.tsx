@@ -5,47 +5,47 @@ import { getPostsByAuthor } from "@/lib/queries/post";
 import { getRelationship } from "@/lib/queries/follow";
 
 export default async function PublicProfilePage({
-params,
+	params,
 }: {
-params: Promise<{ username: string }>;
+	params: Promise<{ username: string }>;
 }) {
-const { username: rawUsername } = await params;
+	const { username: rawUsername } = await params;
 
-let username = rawUsername;
+	let username = rawUsername;
 
-try {
-username = decodeURIComponent(rawUsername);
-} catch {
-// Keep the original username if decoding fails.
-}
+	try {
+		username = decodeURIComponent(rawUsername);
+	} catch {
+		// Keep the original username if decoding fails.
+	}
 
-const user = await getUserByUsername(username);
+	const user = await getUserByUsername(username);
 
-if (!user) {
-notFound();
-}
+	if (!user) {
+		notFound();
+	}
 
-const me = await getCurrentUser();
+	const me = await getCurrentUser();
 
-if (me && String(me._id) === String(user._id)) {
-redirect("/profile");
-}
+	if (me && String(me._id) === String(user._id)) {
+		redirect("/profile");
+	}
 
-const posts = await getPostsByAuthor(user._id, false);
+	const posts = await getPostsByAuthor(user._id, false);
 
-const relationship = await getRelationship(
-me?._id ?? null,
-user._id
-);
+	const relationship = await getRelationship(
+		me?._id ?? null,
+		user._id
+	);
 
-return (
-<ProfileView
-user={{
-...user,
-	title: "",
-}}
-posts={posts}
-relationship={relationship}
-/>
-);
+	return (
+		<ProfileView
+			user={{
+				...user,
+				title: "",
+			}}
+			posts={posts}
+			relationship={relationship}
+		/>
+	);
 }

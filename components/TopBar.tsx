@@ -75,29 +75,57 @@ export default function Topbar({
   const { data: session, status } = useSession();
   const user = session?.user;
 
-  const [me, setMe] = useState<TopbarProfile | null>(null);
-  const [meLoaded, setMeLoaded] = useState(false);
+  // CHANGED: derived values used instead of resetting state inside effects.
+  const isAuthed = status === "authenticated";
+  const userKey = user?.email ?? user?.name ?? "";
+  const userName = user?.name;
+
+  // CHANGED: `me` is now stored together with the user it belongs to
+  // (`owner`), and `meLoadedFor` replaces the old `meLoaded` boolean.
+  // This lets us "reset" by comparing during render instead of calling
+  // setMe(null) / setMeLoaded(false) inside an effect.
+  const [meState, setMeState] = useState<{
+    owner: string;
+    profile: TopbarProfile;
+  } | null>(null);
+  const [meLoadedFor, setMeLoadedFor] = useState<string | null>(null);
 
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  // CHANGED: these hold the raw fetched data. The values the UI reads
+  // (`notifications`, `notificationTotal`, ...) are derived below.
+  const [rawNotifications, setNotifications] = useState<NotificationItem[]>([]);
   // Real total from the server (the list itself is capped at the latest 30)
-  const [notificationTotal, setNotificationTotal] = useState(0);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsError, setNotificationsError] = useState("");
+  const [rawNotificationTotal, setNotificationTotal] = useState(0);
+  const [rawNotificationsError, setNotificationsError] = useState("");
+  // CHANGED: only tracks manual refreshes (set from click handlers, never
+  // synchronously from an effect). Initial loading is derived below.
+  const [notificationsRefreshing, setNotificationsRefreshing] = useState(false);
+  // CHANGED: remembers which user the notification data belongs to, so data
+  // is hidden when signed out or switched to another account.
+  const [notifOwner, setNotifOwner] = useState<string | null>(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    const updateCurrentTime = () => setCurrentTime(Date.now());
+
+    updateCurrentTime();
+    const interval = window.setInterval(updateCurrentTime, 60000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   // Load the current user's profile.
   useEffect(() => {
-    if (status !== "authenticated") {
-      setMe(null);
-      setMeLoaded(false);
-      return;
-    }
+    // CHANGED: removed setMe(null) / setMeLoaded(false) here. Signed-out
+    // state is derived below, so the effect just does nothing.
+    if (!isAuthed) return;
 
     let active = true;
 
@@ -112,15 +140,18 @@ export default function Topbar({
         const data = await response.json();
 
         if (active && data?.user) {
-          setMe({
-            name: data.user.name ?? user?.name ?? "",
-            image: data.user.image ?? null,
+          setMeState({
+            owner: userKey, // CHANGED: remember who this profile belongs to
+            profile: {
+              name: data.user.name ?? userName ?? "",
+              image: data.user.image ?? null,
+            },
           });
         }
       } catch {
         // Keep the session profile as a fallback.
       } finally {
-        if (active) setMeLoaded(true);
+        if (active) setMeLoadedFor(userKey); // CHANGED: was setMeLoaded(true)
       }
     };
 
@@ -132,7 +163,12 @@ export default function Topbar({
       active = false;
       window.removeEventListener("profile:updated", loadProfile);
     };
-  }, [status, user?.name]);
+    // CHANGED: deps now use isAuthed / userKey / userName
+  }, [isAuthed, userKey, userName]);
+
+  // CHANGED: derived instead of reset through state.
+  const me = isAuthed && meState?.owner === userKey ? meState.profile : null;
+  const meLoaded = isAuthed && meLoadedFor === userKey;
 
   const display: TopbarProfile | null = user
     ? me ??
@@ -143,21 +179,29 @@ export default function Topbar({
     : null;
 
   const loading =
-    status === "loading" ||
-    (status === "authenticated" && !meLoaded && !profile);
+    status === "loading" || (isAuthed && !meLoaded && !profile);
+
+  // CHANGED: removed resetNotificationsState(). Derive the visible values
+  // instead of clearing state when the user signs out.
+  const notifReady = isAuthed && notifOwner === userKey;
+  const notifications = notifReady ? rawNotifications : [];
+  const notificationTotal = notifReady ? rawNotificationTotal : 0;
+  const notificationsError = notifReady ? rawNotificationsError : "";
+  // CHANGED: loading = manual refresh OR first load not finished yet.
+  // No setNotificationsLoading(true) needed inside the effect anymore.
+  const notificationsLoading =
+    notificationsRefreshing || (isAuthed && !notifReady);
 
   // API response: { items: [{ id, type, text, createdAt, actorName, postTitle, href }], total }
   const loadNotifications = useCallback(
     async (showLoading = false) => {
-      if (status !== "authenticated") {
-        setNotifications([]);
-        setNotificationTotal(0);
-        setNotificationsError("");
-        setNotificationsLoading(false);
-        return;
-      }
+      // CHANGED: just return when signed out. No state resets here, since
+      // signed-out state is derived above.
+      if (status !== "authenticated") return;
 
-      if (showLoading) setNotificationsLoading(true);
+      // Only called from click handlers (showLoading = true), never
+      // synchronously from an effect.
+      if (showLoading) setNotificationsRefreshing(true);
 
       try {
         const response = await fetch("/api/notifications", {
@@ -206,22 +250,25 @@ export default function Topbar({
       } catch {
         setNotificationsError("Couldn't load notifications. Please try again.");
       } finally {
-        if (showLoading) setNotificationsLoading(false);
+        if (showLoading) setNotificationsRefreshing(false);
+        // CHANGED: marks the first load as finished (success or error) for
+        // this user. This replaces the old synchronous loading flag.
+        setNotifOwner(userKey);
       }
     },
-    [status]
+    [status, userKey] // CHANGED: added userKey
   );
 
   // Initial load, refresh every 30 seconds, on tab focus, and after notification events.
   useEffect(() => {
-    if (status !== "authenticated") {
-      setNotifications([]);
-      setNotificationTotal(0);
-      setNotificationsError("");
-      return;
-    }
+    // CHANGED: removed resetNotificationsState(); nothing to reset.
+    if (!isAuthed) return;
 
-    void loadNotifications(true);
+    // Defer the initial fetch so we do not call the async state-updating
+    // loader synchronously inside the effect body.
+    const initialLoad = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
 
     const interval = window.setInterval(() => {
       void loadNotifications();
@@ -235,11 +282,12 @@ export default function Topbar({
     window.addEventListener("focus", refresh);
 
     return () => {
+      window.clearTimeout(initialLoad);
       window.clearInterval(interval);
       window.removeEventListener("notifications:updated", refresh);
       window.removeEventListener("focus", refresh);
     };
-  }, [status, loadNotifications]);
+  }, [isAuthed, loadNotifications]); // CHANGED: removed resetNotificationsState dep
 
   // Badge number: everything waiting for you, not just the 30 shown
   const notificationCount = notificationTotal;
@@ -265,11 +313,18 @@ export default function Topbar({
 
   // ---------- Search ----------
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<SearchResults>(emptyResults);
-  const [searching, setSearching] = useState(false);
+  // CHANGED: raw state; the visible values are derived below.
+  const [rawResults, setResults] = useState<SearchResults>(emptyResults);
+  const [rawSearching, setSearching] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   const query = search.trim();
+
+  // CHANGED: derived instead of calling setResults(emptyResults) /
+  // setSearching(false) inside the effect when the query is too short.
+  const searchActive = query.length >= 2;
+  const results = searchActive ? rawResults : emptyResults;
+  const searching = searchActive && rawSearching;
 
   const hasResults =
     results.communities.length +
@@ -278,11 +333,8 @@ export default function Topbar({
     0;
 
   useEffect(() => {
-    if (query.length < 2) {
-      setResults(emptyResults);
-      setSearching(false);
-      return;
-    }
+    // CHANGED: removed the synchronous resets; just skip the request.
+    if (query.length < 2) return;
 
     const controller = new AbortController();
 
@@ -430,13 +482,13 @@ export default function Topbar({
   };
 
   const notificationTime = (date?: string) => {
-    if (!date) return "";
+    if (!date || currentTime === null) return "";
 
     const timestamp = new Date(date).getTime();
 
     if (!Number.isFinite(timestamp)) return "";
 
-    const elapsed = Math.max(0, Date.now() - timestamp);
+    const elapsed = Math.max(0, currentTime - timestamp);
     const minutes = Math.floor(elapsed / 60000);
 
     if (minutes < 1) return "Just now";
@@ -607,7 +659,8 @@ export default function Topbar({
           </button>
 
           {notifOpen && (
-           <div className="fixed left-3 right-3 top-[72px] z-50 overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl shadow-black/50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[380px] sm:max-w-[calc(100vw-2rem)]">              {/* Dropdown header */}
+            <div className="fixed left-3 right-3 top-[72px] z-50 overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl shadow-black/50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[380px] sm:max-w-[calc(100vw-2rem)]">
+              {/* Dropdown header */}
               <div className="flex items-center justify-between border-b border-gray-800 px-4 py-4">
                 <div>
                   <h3 className="text-sm font-semibold text-white">
@@ -806,52 +859,52 @@ export default function Topbar({
             </button>
 
             {menuOpen && (
-  <div
-    role="menu"
-    className="absolute right-0 top-full mt-3 w-52 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 py-1.5 text-sm shadow-2xl"
-  >
-    <button
-      type="button"
-      role="menuitem"
-      onClick={() => {
-        setMenuOpen(false);
-        router.push("/profile");
-      }}
-      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
-    >
-      <User className="h-4 w-4" />
-      Profile
-    </button>
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-3 w-52 overflow-hidden rounded-xl border border-gray-800 bg-gray-950 py-1.5 text-sm shadow-2xl"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/profile");
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
+                >
+                  <User className="h-4 w-4" />
+                  Profile
+                </button>
 
-    <button
-      type="button"
-      role="menuitem"
-      onClick={() => {
-        setMenuOpen(false);
-        router.push("/settings");
-      }}
-      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
-    >
-      <Settings className="h-4 w-4" />
-      Settings
-    </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-gray-300 transition hover:bg-gray-900 hover:text-white"
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </button>
 
-    <div className="my-1 border-t border-gray-800" />
+                <div className="my-1 border-t border-gray-800" />
 
-    <button
-      type="button"
-      role="menuitem"
-      onClick={() => signOut({ callbackUrl: "/" })}
-      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-rose-400 transition hover:bg-rose-500/10"
-    >
-      <LogOut className="h-4 w-4" />
-      Log out
-    </button>
-  </div>
-)}
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-rose-400 transition hover:bg-rose-500/10"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    )}
-  </div>
-</header>
-);
+    </header>
+  );
 }

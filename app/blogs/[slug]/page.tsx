@@ -171,9 +171,8 @@ async function BlogPostContent({
 
               <div className="flex items-start justify-between gap-4">
                 <h1
-                  className={`min-w-0 flex-1 break-words text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl ${
-                    !post.cover && post.community ? "mt-5" : ""
-                  }`}
+                  className={`min-w-0 flex-1 break-words text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl ${!post.cover && post.community ? "mt-5" : ""
+                    }`}
                 >
                   {post.title}
                 </h1>
@@ -285,18 +284,18 @@ async function BlogPostContent({
               </div>
 
               {post.published && (
-  <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 pt-6">
-    <LikeButton
-      postId={post._id}
-      initialLiked={like.liked}
-      initialCount={like.count}
-      signedIn={!!me}
-    />
+                <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 pt-6">
+                  <LikeButton
+                    postId={post._id}
+                    initialLiked={like.liked}
+                    initialCount={like.count}
+                    signedIn={!!me}
+                  />
 
-    <ShareButton path={`/blogs/${post.slug}`} title={post.title} />
-  </div>
-)}
-              
+                  <ShareButton path={`/blogs/${post.slug}`} title={post.title} />
+                </div>
+              )}
+
             </div>
           </article>
 

@@ -1,10 +1,14 @@
+/* app/globals.css */
 @import "tailwindcss";
 
-/* The site is dark only, whatever the system theme is */
 :root {
-  --background: #030712; /* same as Tailwind's gray-950 */
-  --foreground: #ffffff;
   color-scheme: dark;
+  --background: #08090c;
+  --foreground: #f4f5f7;
+  --surface: #101116;
+  --border: rgba(255, 255, 255, 0.085);
+  --muted: #9296a3;
+  --accent: #818cf8;
 }
 
 @theme inline {
@@ -14,12 +18,85 @@
   --font-mono: var(--font-geist-mono);
 }
 
-html,
-body {
-  background-color: var(--background);
-  color: var(--foreground);
+/* NEW: entrance animation for dropdowns (used as `animate-pop`).
+   It only plays when the user opens something, and the reduced-motion
+   rule at the bottom of this file disables it automatically. */
+@theme {
+  --animate-pop: pop 140ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+* {
+  box-sizing: border-box;
+  /* NEW: slim, dark scrollbars that match the theme */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+html {
+  min-height: 100%;
+  background: var(--background);
+  color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(99, 102, 241, 0.09), transparent 48%),
+    var(--background);
+  color: var(--foreground);
+  /* CHANGED: uses the Geist font if your layout loads it, and falls back to
+     the system UI font instead of plain Arial */
+  font-family:
+    var(--font-geist-sans, "Inter"), system-ui, -apple-system, "Segoe UI",
+    Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.35);
+  color: #fff;
+}
+
+/* CHANGED: the global keyboard focus outline now skips text inputs.
+   Before, this rule overrode Tailwind's `outline-none` and drew a rectangle
+   inside the search box. Buttons, links and everything else keep it. */
+:focus-visible:not(input[type="text"]):not(input[type="search"]) {
+  outline: 2px solid rgba(129, 140, 248, 0.85);
+  outline-offset: 3px;
+}
+
+/* NEW: pointer cursor on enabled buttons (Tailwind v4 resets it to default) */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
